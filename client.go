@@ -100,6 +100,10 @@ func SetTransport(transport http.RoundTripper) *Client {
 
 // SetTransport sets transport of the HTTP client.
 func (c *Client) SetTransport(transport http.RoundTripper) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.RawClient.Transport = transport
 	return c
 }
@@ -111,6 +115,10 @@ func SetRedirect(policy func(req *http.Request, via []*http.Request) error) *Cli
 
 // SetRedirect sets policy of the HTTP client for handling redirects.
 func (c *Client) SetRedirect(policy func(req *http.Request, via []*http.Request) error) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.RawClient.CheckRedirect = policy
 	return c
 }
@@ -135,6 +143,10 @@ func SetCookieJar(jar http.CookieJar) *Client {
 
 // SetCookieJar sets cookie jar of the HTTP client.
 func (c *Client) SetCookieJar(jar http.CookieJar) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.RawClient.Jar = jar
 	return c
 }
@@ -158,6 +170,10 @@ func SetTimeout(timeout time.Duration) *Client {
 
 // SetTimeout sets timeout of the HTTP client.
 func (c *Client) SetTimeout(timeout time.Duration) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.RawClient.Timeout = timeout
 	return c
 }
@@ -333,6 +349,10 @@ func SetHost(host string) *Client {
 // The host will be applied to all requests raised from this client instance.
 // Also it can be overridden at request level host options.
 func (c *Client) SetHost(host string) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.Host = host
 	return c
 }
@@ -348,6 +368,10 @@ func SetHeaders(headers Headers) *Client {
 // These headers will be applied to all requests raised from this client instance.
 // Also it can be overridden at request level headers options.
 func (c *Client) SetHeaders(headers Headers) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	for k, v := range headers {
 		c.Headers.Set(k, v)
 	}
@@ -355,31 +379,31 @@ func (c *Client) SetHeaders(headers Headers) *Client {
 }
 
 // SetUserAgent sets User-Agent header value of the client.
-// The user agent will be applied to all requests raised from this client instance.
-// Also it can be overridden at request level user agent options.
 func SetUserAgent(userAgent string) *Client {
 	return DefaultClient.SetUserAgent(userAgent)
 }
 
 // SetUserAgent sets User-Agent header value of the client.
-// The user agent will be applied to all requests raised from this client instance.
-// Also it can be overridden at request level user agent options.
 func (c *Client) SetUserAgent(userAgent string) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.Headers.Set("User-Agent", userAgent)
 	return c
 }
 
 // SetReferer sets Referer header value of the client.
-// The referer will be applied to all requests raised from this client instance.
-// Also it can be overridden at request level referer options.
 func SetReferer(referer string) *Client {
 	return DefaultClient.SetReferer(referer)
 }
 
 // SetReferer sets Referer header value of the client.
-// The referer will be applied to all requests raised from this client instance.
-// Also it can be overridden at request level referer options.
 func (c *Client) SetReferer(referer string) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.Headers.Set("Referer", referer)
 	return c
 }
@@ -393,6 +417,10 @@ func SetCookies(cookies ...*http.Cookie) *Client {
 // SetCookies sets cookies of the client.
 // These cookies will be applied to all requests raised from this client instance.
 func (c *Client) SetCookies(cookies ...*http.Cookie) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.Cookies = append(c.Cookies, cookies...)
 	return c
 }
@@ -408,6 +436,10 @@ func SetBasicAuth(username string, password string) *Client {
 // The basic authentication will be applied to all requests raised from this client instance.
 // Also it can be overridden at request level basic authentication options.
 func (c *Client) SetBasicAuth(username string, password string) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.auth = &auth{
 		username: username,
 		password: password,
@@ -426,6 +458,10 @@ func SetBearerToken(token string) *Client {
 // The bearer token will be applied to all requests raised from this client instance.
 // Also it can be overridden at request level bearer token options.
 func (c *Client) SetBearerToken(token string) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	c.bearerToken = token
 	return c
 }
@@ -467,6 +503,10 @@ func SetRetry(attempts int, delay time.Duration, maxDuration time.Duration,
 // Also it can be overridden at request level retry policy options.
 func (c *Client) SetRetry(attempts int, delay time.Duration, maxDuration time.Duration,
 	conditions ...func(*Response) bool) *Client {
+	if c.Err != nil {
+		return c
+	}
+
 	if attempts > 1 {
 		c.retry = &retry{
 			attempts:    attempts,

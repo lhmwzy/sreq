@@ -23,13 +23,32 @@ func TestClient_RaiseError(t *testing.T) {
 
 	_, err := sreq.New().
 		SetProxyFromURL(invalidURL).
+		SetTransport(nil).
+		DisableSession().
+		DisableRedirect().
+		SetTimeout(120*time.Second).
 		SetProxyFromURL(validURL).
 		SetProxy(http.ProxyFromEnvironment).
 		SetTLSClientConfig(&tls.Config{}).
 		AppendClientCertificates(tls.Certificate{}).
 		AppendRootCAs(pemFileExist).
 		DisableVerify().
+		SetHost("httpbin.org").
+		SetHeaders(sreq.Headers{
+			"Origin": "http://httpbin.org",
+		}).
+		SetUserAgent("Go-http-client").
+		SetReferer("http://httpbin.org").
+		SetCookies(
+			&http.Cookie{
+				Name:  "uid",
+				Value: "10086",
+			},
+		).
+		SetBasicAuth("user", "pass").
+		SetBearerToken("sreq").
 		SetContext(context.Background()).
+		SetRetry(3, 1*time.Second, 2*time.Minute).
 		Raw()
 	if err == nil {
 		t.Error("Client_RaiseError test failed")
