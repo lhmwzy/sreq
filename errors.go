@@ -26,9 +26,6 @@ var (
 
 	// ErrResponseNamedCookieNotPresent can be used when named cookie of the HTTP response not present.
 	ErrResponseNamedCookieNotPresent = errors.New("sreq: named cookie not present")
-
-	// ErrRetryMaxDurationExceeded can be used when the retry max duration exceeded.
-	ErrRetryMaxDurationExceeded = errors.New("sreq: retry max duration exceeded")
 )
 
 type (

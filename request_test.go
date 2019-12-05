@@ -58,7 +58,7 @@ func TestNewRequest(t *testing.T) {
 		SetBearerToken("sreq").
 		SetContext(context.Background()).
 		SetTimeout(3*time.Second).
-		SetRetry(3, 1*time.Second, 2*time.Minute).
+		SetRetry(3, 1*time.Second).
 		Raw()
 	if err == nil {
 		t.Error("NewRequest test failed")
@@ -535,20 +535,10 @@ func TestWithRetry(t *testing.T) {
 		return err != nil
 	}
 
-	client := sreq.New().SetRetry(3, 1*time.Second, 2*time.Minute, condition)
+	client := sreq.New().SetRetry(3, 1*time.Second, condition)
 	cookie, err := client.
 		Get(ts.URL,
-			sreq.WithRetry(5, 1*time.Second, 3*time.Second, condition),
-		).
-		EnsureStatusOk().
-		Cookie("uid")
-	if err != sreq.ErrRetryMaxDurationExceeded {
-		t.Error("WithRetry test failed")
-	}
-
-	cookie, err = client.
-		Get(ts.URL,
-			sreq.WithRetry(5, 1*time.Second, 2*time.Minute, condition),
+			sreq.WithRetry(5, 1*time.Second, condition),
 		).
 		EnsureStatusOk().
 		Cookie("uid")
@@ -567,7 +557,7 @@ func TestWithRetry(t *testing.T) {
 	_, err = client.
 		Get(ts.URL,
 			sreq.WithContext(ctx),
-			sreq.WithRetry(5, 1*time.Second, 2*time.Minute, condition),
+			sreq.WithRetry(5, 1*time.Second, condition),
 		).
 		EnsureStatusOk().
 		Cookie("uid")

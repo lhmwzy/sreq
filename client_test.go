@@ -48,7 +48,7 @@ func TestClient_RaiseError(t *testing.T) {
 		SetBasicAuth("user", "pass").
 		SetBearerToken("sreq").
 		SetContext(context.Background()).
-		SetRetry(3, 1*time.Second, 2*time.Minute).
+		SetRetry(3, 1*time.Second).
 		Raw()
 	if err == nil {
 		t.Error("Client_RaiseError test failed")
@@ -479,7 +479,7 @@ func TestClient_SetRetry(t *testing.T) {
 		_, err := resp.Cookie("uid")
 		return err != nil
 	}
-	client := sreq.New().SetRetry(5, 1*time.Second, 2*time.Minute, condition)
+	client := sreq.New().SetRetry(5, 1*time.Second, condition)
 	cookie, err := client.
 		Get(ts.URL).
 		EnsureStatusOk().
@@ -728,7 +728,7 @@ func testDefaultClientFilterCookie(t *testing.T) {
 		_, err := resp.Cookie("uid")
 		return err != nil
 	}
-	sreq.SetRetry(5, 1*time.Second, 2*time.Minute, condition)
+	sreq.SetRetry(5, 1*time.Second, condition)
 
 	err := sreq.
 		Get(ts.URL).

@@ -47,10 +47,9 @@ type (
 	}
 
 	retry struct {
-		attempts    int
-		delay       time.Duration
-		maxDuration time.Duration
-		conditions  []func(*Response) bool
+		attempts   int
+		delay      time.Duration
+		conditions []func(*Response) bool
 	}
 )
 
@@ -493,15 +492,17 @@ func (c *Client) SetContext(ctx context.Context) *Client {
 // SetRetry sets retry policy of the client.
 // The retry policy will be applied to all requests raised from this client instance.
 // Also it can be overridden at request level retry policy options.
-func SetRetry(attempts int, delay time.Duration, maxDuration time.Duration,
+// Notes: Request timeout or context has priority over the retry policy.
+func SetRetry(attempts int, delay time.Duration,
 	conditions ...func(*Response) bool) *Client {
-	return DefaultClient.SetRetry(attempts, delay, maxDuration, conditions...)
+	return DefaultClient.SetRetry(attempts, delay, conditions...)
 }
 
 // SetRetry sets retry policy of the client.
 // The retry policy will be applied to all requests raised from this client instance.
 // Also it can be overridden at request level retry policy options.
-func (c *Client) SetRetry(attempts int, delay time.Duration, maxDuration time.Duration,
+// Notes: Request timeout or context has priority over the retry policy.
+func (c *Client) SetRetry(attempts int, delay time.Duration,
 	conditions ...func(*Response) bool) *Client {
 	if c.Err != nil {
 		return c
@@ -509,10 +510,9 @@ func (c *Client) SetRetry(attempts int, delay time.Duration, maxDuration time.Du
 
 	if attempts > 1 {
 		c.retry = &retry{
-			attempts:    attempts,
-			delay:       delay,
-			maxDuration: maxDuration,
-			conditions:  conditions,
+			attempts:   attempts,
+			delay:      delay,
+			conditions: conditions,
 		}
 	}
 	return c
@@ -754,7 +754,6 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 	}
 
 	var err error
-	timeout := time.After(retry.maxDuration)
 	for i := retry.attempts; i > 0; i-- {
 		resp.RawResponse, resp.Err = c.RawClient.Do(req.RawRequest)
 		if err = ctx.Err(); err != nil {
@@ -776,9 +775,6 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 
 		select {
 		case <-time.After(retry.delay):
-		case <-timeout:
-			resp.Err = ErrRetryMaxDurationExceeded
-			return
 		case <-ctx.Done():
 			resp.Err = ctx.Err()
 			return
