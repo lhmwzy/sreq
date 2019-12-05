@@ -29,12 +29,12 @@ func (resp *Response) Raw() (*http.Response, error) {
 
 // Content decodes the HTTP response body to bytes.
 func (resp *Response) Content() ([]byte, error) {
-	if resp.body != nil {
-		return resp.body, nil
-	}
-
 	if resp.Err != nil {
 		return nil, resp.Err
+	}
+
+	if resp.body != nil {
+		return resp.body, nil
 	}
 	defer resp.RawResponse.Body.Close()
 
@@ -51,12 +51,12 @@ func (resp *Response) Text() (string, error) {
 
 // JSON decodes the HTTP response body and unmarshals its JSON-encoded data into v.
 func (resp *Response) JSON(v interface{}) error {
-	if resp.body != nil {
-		return json.Unmarshal(resp.body, v)
-	}
-
 	if resp.Err != nil {
 		return resp.Err
+	}
+
+	if resp.body != nil {
+		return json.Unmarshal(resp.body, v)
 	}
 
 	buf := acquireBuffer()
@@ -110,6 +110,7 @@ func (resp *Response) EnsureStatus2xx() *Response {
 	if resp.Err != nil {
 		return resp
 	}
+
 	if resp.RawResponse.StatusCode/100 != 2 {
 		resp.Err = fmt.Errorf("bad status: %d", resp.RawResponse.StatusCode)
 	}
@@ -121,6 +122,7 @@ func (resp *Response) EnsureStatus(code int) *Response {
 	if resp.Err != nil {
 		return resp
 	}
+
 	if resp.RawResponse.StatusCode != code {
 		resp.Err = fmt.Errorf("bad status: %d", resp.RawResponse.StatusCode)
 	}
@@ -130,12 +132,12 @@ func (resp *Response) EnsureStatus(code int) *Response {
 // Save saves the HTTP response into a file.
 // Notes: Save won't make the HTTP response body reused.
 func (resp *Response) Save(filename string, perm os.FileMode) error {
-	if resp.body != nil {
-		return ioutil.WriteFile(filename, resp.body, perm)
-	}
-
 	if resp.Err != nil {
 		return resp.Err
+	}
+
+	if resp.body != nil {
+		return ioutil.WriteFile(filename, resp.body, perm)
 	}
 
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
