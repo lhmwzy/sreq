@@ -14,6 +14,8 @@ type (
 	Response struct {
 		RawResponse *http.Response
 		Err         error
+
+		body []byte
 	}
 
 	// ResponseInterceptor specifies a response interceptor.
@@ -27,12 +29,18 @@ func (resp *Response) Raw() (*http.Response, error) {
 
 // Content decodes the HTTP response body to bytes.
 func (resp *Response) Content() ([]byte, error) {
+	if resp.body != nil {
+		return resp.body, nil
+	}
+
 	if resp.Err != nil {
 		return nil, resp.Err
 	}
 	defer resp.RawResponse.Body.Close()
 
-	return ioutil.ReadAll(resp.RawResponse.Body)
+	var err error
+	resp.body, err = ioutil.ReadAll(resp.RawResponse.Body)
+	return resp.body, err
 }
 
 // Text decodes the HTTP response body and returns the text representation of its raw data.
@@ -43,12 +51,23 @@ func (resp *Response) Text() (string, error) {
 
 // JSON decodes the HTTP response body and unmarshals its JSON-encoded data into v.
 func (resp *Response) JSON(v interface{}) error {
+	if resp.body != nil {
+		return json.Unmarshal(resp.body, v)
+	}
+
 	if resp.Err != nil {
 		return resp.Err
 	}
-	defer resp.RawResponse.Body.Close()
 
-	return json.NewDecoder(resp.RawResponse.Body).Decode(v)
+	buf := acquireBuffer()
+	tee := io.TeeReader(resp.RawResponse.Body, buf)
+	defer func() {
+		resp.RawResponse.Body.Close()
+		resp.body = buf.Bytes()
+		releaseBuffer(buf)
+	}()
+
+	return json.NewDecoder(tee).Decode(v)
 }
 
 // Cookies returns the HTTP response cookies.
@@ -109,7 +128,12 @@ func (resp *Response) EnsureStatus(code int) *Response {
 }
 
 // Save saves the HTTP response into a file.
+// Notes: Save won't make the HTTP response body reused.
 func (resp *Response) Save(filename string, perm os.FileMode) error {
+	if resp.body != nil {
+		return ioutil.WriteFile(filename, resp.body, perm)
+	}
+
 	if resp.Err != nil {
 		return resp.Err
 	}
@@ -127,6 +151,7 @@ func (resp *Response) Save(filename string, perm os.FileMode) error {
 
 // Verbose makes the HTTP request and its response more talkative.
 // It's similar to "curl -v", used for debug.
+// Notes: Verbose won't make the HTTP response body reused.
 func (resp *Response) Verbose(w io.Writer) error {
 	if resp.Err != nil {
 		return resp.Err
@@ -161,6 +186,11 @@ func (resp *Response) Verbose(w io.Writer) error {
 		fmt.Fprintf(w, "< %s: %s\r\n", k, rawResponse.Header.Get(k))
 	}
 	fmt.Fprint(w, "<\r\n")
+
+	if resp.body != nil {
+		fmt.Fprint(w, string(resp.body))
+		return nil
+	}
 
 	defer rawResponse.Body.Close()
 	_, err := io.Copy(w, rawResponse.Body)

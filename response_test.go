@@ -10,6 +10,10 @@ import (
 	"github.com/winterssy/sreq"
 )
 
+const (
+	testFileName = "testdata.json"
+)
+
 func TestResponse_Resolve(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
@@ -165,10 +169,6 @@ func TestResponse_EnsureStatus(t *testing.T) {
 }
 
 func TestResponse_Save(t *testing.T) {
-	const (
-		testFileName = "testdata.json"
-	)
-
 	client := sreq.New()
 	err := client.
 		Get("https://www.google.com/404").
@@ -208,6 +208,50 @@ func TestResponse_Verbose(t *testing.T) {
 			}),
 		).
 		Verbose(ioutil.Discard)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestResponse_ReuseBody(t *testing.T) {
+	type response struct {
+		Args map[string]string `json:"args"`
+	}
+
+	client := sreq.New()
+	r := client.
+		Get("http://httpbin.org/get",
+			sreq.WithQuery(sreq.Params{
+				"k1": "v1",
+				"k2": "v2",
+			}),
+		)
+
+	_, err := r.Content()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = r.Text()
+	if err != nil {
+		t.Error(err)
+	}
+
+	resp := new(response)
+	err = r.JSON(resp)
+	if err != nil {
+		t.Error(err)
+	}
+	if resp.Args["k1"] != "v1" || resp.Args["k2"] != "v2" {
+		t.Error("Response_ReuseBody test failed")
+	}
+
+	err = r.Save(testFileName, 0664)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = r.Verbose(ioutil.Discard)
 	if err != nil {
 		t.Error(err)
 	}

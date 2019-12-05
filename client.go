@@ -43,17 +43,6 @@ type (
 		requestInterceptors  []RequestInterceptor
 		responseInterceptors []ResponseInterceptor
 	}
-
-	auth struct {
-		username string
-		password string
-	}
-
-	retry struct {
-		attempts   int
-		delay      time.Duration
-		conditions []func(*Response) bool
-	}
 )
 
 // New returns a new Client.

@@ -671,7 +671,7 @@ func TestDefaultClient(t *testing.T) {
 		t.Fatal("current transport isn't a non-nil *http.Transport instance")
 	}
 
-	req := sreq.NewRequest("GET", "https://www.google.com")
+	req := sreq.NewRequest("GET", "http://httpbin.org/get")
 	_, err = req.Raw()
 	if err != nil {
 		t.Fatal(err)

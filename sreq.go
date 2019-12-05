@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -32,6 +33,17 @@ type (
 
 	// Files is the same as map[string]string, used for multipart-data.
 	Files map[string]string
+
+	auth struct {
+		username string
+		password string
+	}
+
+	retry struct {
+		attempts   int
+		delay      time.Duration
+		conditions []func(*Response) bool
+	}
 )
 
 func acquireBuffer() *bytes.Buffer {
