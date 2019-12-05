@@ -47,7 +47,7 @@ type (
 
 // Error implements error interface.
 func (c *ClientError) Error() string {
-	return fmt.Sprintf("sreq>>Client [%s]: %s", c.Cause, c.Err.Error())
+	return fmt.Sprintf("sreq [Client] [%s]: %s", c.Cause, c.Err.Error())
 }
 
 // Unwrap unpacks and returns the wrapped err of c.
@@ -57,7 +57,7 @@ func (c *ClientError) Unwrap() error {
 
 // Error implements error interface.
 func (req *RequestError) Error() string {
-	return fmt.Sprintf("sreq>>Request [%s]: %s", req.Cause, req.Err.Error())
+	return fmt.Sprintf("sreq [Request] [%s]: %s", req.Cause, req.Err.Error())
 }
 
 // Unwrap unpacks and returns the wrapped err of req.

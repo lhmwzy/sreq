@@ -18,7 +18,7 @@ func TestClientError(t *testing.T) {
 	}
 
 	cErr, ok := err.(*sreq.ClientError)
-	if !ok || !strings.HasPrefix(cErr.Error(), "sreq>>Client") {
+	if !ok || !strings.HasPrefix(cErr.Error(), "sreq [Client]") {
 		t.Error("ClientError test failed")
 	}
 
@@ -37,7 +37,7 @@ func TestRequestError(t *testing.T) {
 	}
 
 	reqErr, ok := err.(*sreq.RequestError)
-	if !ok || !strings.HasPrefix(reqErr.Error(), "sreq>>Request") {
+	if !ok || !strings.HasPrefix(reqErr.Error(), "sreq [Request]") {
 		t.Error("RequestError test failed")
 	}
 
