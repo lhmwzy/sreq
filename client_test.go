@@ -3,6 +3,9 @@ package sreq_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -49,6 +52,12 @@ func TestClient_RaiseError(t *testing.T) {
 		SetBearerToken("sreq").
 		SetContext(context.Background()).
 		SetRetry(3, 1*time.Second).
+		UseRequestInterceptors(func(req *sreq.Request) error {
+			return nil
+		}).
+		UseResponseInterceptors(func(resp *sreq.Response) error {
+			return nil
+		}).
 		Raw()
 	if err == nil {
 		t.Error("Client_RaiseError test failed")
@@ -493,6 +502,104 @@ func TestClient_SetRetry(t *testing.T) {
 	}
 }
 
+func TestClient_UseRequestInterceptors(t *testing.T) {
+	logInterceptor := func(req *sreq.Request) error {
+		rawRequest := req.RawRequest
+		var w io.Writer = ioutil.Discard
+		fmt.Fprintf(w, "> %s %s %s\r\n", rawRequest.Method, rawRequest.URL.RequestURI(), rawRequest.Proto)
+		fmt.Fprintf(w, "> Host: %s\r\n", rawRequest.URL.Host)
+		for k := range rawRequest.Header {
+			fmt.Fprintf(w, "> %s: %s\r\n", k, rawRequest.Header.Get(k))
+		}
+		fmt.Fprint(w, ">\r\n")
+
+		if rawRequest.GetBody != nil && rawRequest.ContentLength != 0 {
+			rc, err := rawRequest.GetBody()
+			if err != nil {
+				return err
+			}
+			defer rc.Close()
+
+			_, err = io.Copy(w, rc)
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprint(w, "\r\n")
+		}
+
+		return nil
+	}
+
+	client := sreq.New().UseRequestInterceptors(logInterceptor)
+	client.Post("http://httpbin.org/post",
+		sreq.WithForm(sreq.Form{
+			"k1": "v1",
+		}),
+		sreq.WithReferer("https://www.google.com"),
+	)
+
+	errMethodNotAllowed := errors.New("method not allowed")
+	abortInterceptor := func(req *sreq.Request) error {
+		rawRequest := req.RawRequest
+		if rawRequest.Method == "DELETE" {
+			return errMethodNotAllowed
+		}
+
+		return nil
+	}
+
+	client = sreq.New().UseRequestInterceptors(abortInterceptor)
+	_, err := client.Delete("http://httpbin.org/delete",
+		sreq.WithForm(sreq.Form{
+			"uid": "10086",
+		}),
+	).Raw()
+	if err != errMethodNotAllowed {
+		t.Error("Client_UseRequestInterceptors test failed")
+	}
+}
+
+func TestClient_UseResponseInterceptors(t *testing.T) {
+	logInterceptor := func(resp *sreq.Response) error {
+		var w io.Writer = ioutil.Discard
+		rawResponse := resp.RawResponse
+		fmt.Fprintf(w, "< %s %s\r\n", rawResponse.Proto, rawResponse.Status)
+		for k := range rawResponse.Header {
+			fmt.Fprintf(w, "< %s: %s\r\n", k, rawResponse.Header.Get(k))
+		}
+		fmt.Fprint(w, "<\r\n")
+
+		fmt.Fprint(w, "< Cookies:\r\n")
+		cookies, _ := resp.Cookies()
+		for _, c := range cookies {
+			fmt.Fprintf(w, "< %s: %s\r\n", c.Name, c.Value)
+		}
+		return nil
+	}
+
+	client := sreq.New().UseResponseInterceptors(logInterceptor)
+	client.Get("https://www.baidu.com")
+
+	errUnauthorized := errors.New("illegal user")
+	abortInterceptor := func(resp *sreq.Response) error {
+		rawResponse := resp.RawResponse
+		if rawResponse.StatusCode == http.StatusUnauthorized {
+			return errUnauthorized
+		}
+
+		return nil
+	}
+
+	client = sreq.New().UseResponseInterceptors(abortInterceptor)
+	_, err := client.Get("http://httpbin.org/basic-auth/admin/pass",
+		sreq.WithBasicAuth("user", "pass"),
+	).Raw()
+	if err != errUnauthorized {
+		t.Error("Client_UseResponseInterceptors test failed")
+	}
+}
+
 func TestClient_FilterCookie(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{
@@ -729,6 +836,12 @@ func testDefaultClientFilterCookie(t *testing.T) {
 		return err != nil
 	}
 	sreq.SetRetry(5, 1*time.Second, condition)
+	sreq.UseRequestInterceptors(func(req *sreq.Request) error {
+		return nil
+	})
+	sreq.UseResponseInterceptors(func(resp *sreq.Response) error {
+		return nil
+	})
 
 	err := sreq.
 		Get(ts.URL).

@@ -15,6 +15,9 @@ type (
 		RawResponse *http.Response
 		Err         error
 	}
+
+	// ResponseInterceptor specifies a response interceptor.
+	ResponseInterceptor func(*Response) error
 )
 
 // Raw returns the raw HTTP response.

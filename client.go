@@ -39,6 +39,9 @@ type (
 		bearerToken string
 		ctx         context.Context
 		retry       *retry
+
+		requestInterceptors  []RequestInterceptor
+		responseInterceptors []ResponseInterceptor
 	}
 
 	auth struct {
@@ -518,6 +521,36 @@ func (c *Client) SetRetry(attempts int, delay time.Duration,
 	return c
 }
 
+// UseRequestInterceptors appends request interceptors of the client.
+func UseRequestInterceptors(interceptors ...RequestInterceptor) *Client {
+	return DefaultClient.UseRequestInterceptors(interceptors...)
+}
+
+// UseRequestInterceptors appends request interceptors of the client.
+func (c *Client) UseRequestInterceptors(interceptors ...RequestInterceptor) *Client {
+	if c.Err != nil {
+		return c
+	}
+
+	c.requestInterceptors = append(c.requestInterceptors, interceptors...)
+	return c
+}
+
+// UseResponseInterceptors appends response interceptors of the client.
+func UseResponseInterceptors(interceptors ...ResponseInterceptor) *Client {
+	return DefaultClient.UseResponseInterceptors(interceptors...)
+}
+
+// UseResponseInterceptors appends response interceptors of the client.
+func (c *Client) UseResponseInterceptors(interceptors ...ResponseInterceptor) *Client {
+	if c.Err != nil {
+		return c
+	}
+
+	c.responseInterceptors = append(c.responseInterceptors, interceptors...)
+	return c
+}
+
 // Get makes a GET HTTP request.
 func Get(url string, opts ...RequestOption) *Response {
 	return DefaultClient.Get(url, opts...)
@@ -661,8 +694,37 @@ func (c *Client) Do(req *Request) *Response {
 	c.setBasicAuth(req)
 	c.setBearerToken(req)
 	c.setContext(req)
+
+	err := c.onBeforeRequest(req)
+	if err != nil {
+		resp.Err = err
+		return resp
+	}
+
 	c.doWithRetry(req, resp)
+	c.onAfterResponse(resp)
 	return resp
+}
+
+func (c *Client) onBeforeRequest(req *Request) error {
+	var err error
+	for _, interceptor := range c.requestInterceptors {
+		if err = interceptor(req); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) onAfterResponse(resp *Response) {
+	var err error
+	for _, interceptor := range c.responseInterceptors {
+		if err = interceptor(resp); err != nil {
+			resp.Err = err
+			return
+		}
+	}
 }
 
 func (c *Client) setHost(req *Request) {

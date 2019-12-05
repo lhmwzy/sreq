@@ -60,8 +60,11 @@ type (
 		retry       *retry
 	}
 
-	// RequestOption specifies the request options, like params, form, etc.
+	// RequestOption specifies a request options, like params, form, etc.
 	RequestOption func(*Request) *Request
+
+	// RequestInterceptor specifies a request interceptor.
+	RequestInterceptor func(*Request) error
 )
 
 func (req *Request) raiseError(cause string, err error) {
