@@ -437,7 +437,7 @@ func WithHeaders(headers Headers) RequestOption {
 	}
 }
 
-// WithContentType sets contentType header value for the HTTP request.
+// WithContentType sets Content-Type header value for the HTTP request.
 func WithContentType(contentType string) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetContentType(contentType)
