@@ -215,7 +215,7 @@ func (req *Request) SetQuery(params Params) *Request {
 
 	query := req.RawRequest.URL.Query()
 	for k, v := range params {
-		query.Set(k, v)
+		query.Add(k, v)
 	}
 
 	req.RawRequest.URL.RawQuery = query.Encode()
@@ -253,7 +253,7 @@ func (req *Request) SetForm(form Form) *Request {
 
 	data := stdurl.Values{}
 	for k, v := range form {
-		data.Set(k, v)
+		data.Add(k, v)
 	}
 
 	r := strings.NewReader(data.Encode())
