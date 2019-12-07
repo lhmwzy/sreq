@@ -1,6 +1,7 @@
 package sreq
 
 import (
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -10,6 +11,7 @@ import (
 	"net/http/cookiejar"
 	stdurl "net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/publicsuffix"
@@ -818,7 +820,7 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 	}
 
 	if req.retry == nil && c.retry == nil {
-		resp.RawResponse, resp.Err = c.RawClient.Do(req.RawRequest)
+		resp.RawResponse, resp.Err = c.do(req.RawRequest)
 		return
 	}
 
@@ -829,7 +831,7 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 
 	var err error
 	for i := retry.attempts; i > 0; i-- {
-		resp.RawResponse, resp.Err = c.RawClient.Do(req.RawRequest)
+		resp.RawResponse, resp.Err = c.do(req.RawRequest)
 		if err = ctx.Err(); err != nil {
 			resp.Err = err
 			return
@@ -854,4 +856,23 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 			return
 		}
 	}
+}
+
+func (c *Client) do(rawRequest *http.Request) (*http.Response, error) {
+	rawResponse, err := c.RawClient.Do(rawRequest)
+	if err != nil {
+		return rawResponse, err
+	}
+
+	if strings.EqualFold(rawResponse.Header.Get("Content-Encoding"), "gzip") &&
+		rawResponse.ContentLength != 0 {
+		if _, ok := rawResponse.Body.(*gzip.Reader); !ok {
+			rawResponse.Body, err = gzip.NewReader(rawResponse.Body)
+			if err != nil {
+				return rawResponse, err
+			}
+		}
+	}
+
+	return rawResponse, nil
 }

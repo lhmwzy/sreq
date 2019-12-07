@@ -1,6 +1,7 @@
 package sreq_test
 
 import (
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -657,6 +658,32 @@ func TestClient_Do(t *testing.T) {
 		Verbose(ioutil.Discard)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestAutoGzip(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Encoding", "gzip")
+		zw := gzip.NewWriter(w)
+		_, _ = zw.Write([]byte("hello world"))
+		zw.Close()
+	}))
+	defer ts.Close()
+
+	client := sreq.New()
+	data, err := client.
+		Get(ts.URL,
+			sreq.WithHeaders(sreq.Headers{
+				"Accept-Encoding": "gzip",
+			}),
+		).Text()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if data != "hello world" {
+		t.Error("AutoGzip test failed")
 	}
 }
 

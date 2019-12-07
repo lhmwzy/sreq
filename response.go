@@ -196,5 +196,10 @@ func (resp *Response) Verbose(w io.Writer) error {
 
 	defer rawResponse.Body.Close()
 	_, err := io.Copy(w, rawResponse.Body)
-	return err
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprint(w, "\r\n")
+	return nil
 }
