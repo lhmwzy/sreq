@@ -109,7 +109,7 @@ func sendJSON() {
 func uploadFiles() {
 	data, err := sreq.
 		Post("http://httpbin.org/post",
-			sreq.WithFiles(sreq.Files{
+			sreq.WithMultipart(sreq.Files{
 				"image1": "./testdata/testimage1.jpg",
 				"image2": "./testdata/testimage2.jpg",
 			}),

@@ -7,6 +7,8 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -50,10 +52,7 @@ func TestNewRequest(t *testing.T) {
 			"msg": "hi&hello",
 			"num": 2019,
 		}, true).
-		SetFiles(sreq.Files{
-			"field1": "./testdata/testfile1.txt",
-			"field2": "./testdata/testfile2.txt",
-		}).
+		SetMultipart(nil, nil).
 		SetBasicAuth("user", "pass").
 		SetBearerToken("sreq").
 		SetContext(context.Background()).
@@ -80,16 +79,25 @@ func TestWithBody(t *testing.T) {
 
 func TestWithQuery(t *testing.T) {
 	type response struct {
-		Args map[string]string `json:"args"`
+		Args struct {
+			String      string   `json:"string"`
+			Int         string   `json:"int"`
+			StringArray []string `json:"stringArray"`
+			IntArray    []string `json:"intArray"`
+		} `json:"args"`
 	}
 
 	client := sreq.New()
+	stringArray := []string{"10086", "10010", "10000"}
+	intArray := []int{10086, 10010, 10000}
 	resp := new(response)
 	err := client.
 		Get("http://httpbin.org/get",
 			sreq.WithQuery(sreq.Params{
-				"k1": "v1",
-				"k2": "v2",
+				"string":      "2019",
+				"int":         2019,
+				"stringArray": stringArray,
+				"intArray":    intArray,
 			}),
 		).
 		EnsureStatusOk().
@@ -98,7 +106,9 @@ func TestWithQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Args["k1"] != "v1" || resp.Args["k2"] != "v2" {
+	if resp.Args.Int != "2019" || resp.Args.String != "2019" ||
+		!reflect.DeepEqual(resp.Args.StringArray, stringArray) ||
+		!reflect.DeepEqual(resp.Args.IntArray, stringArray) {
 		t.Error("WithQuery test failed")
 	}
 }
@@ -131,12 +141,16 @@ func TestWithHeaders(t *testing.T) {
 	}
 
 	client := sreq.New()
+	stringArray := []string{"10086", "10010", "10000"}
+	intArray := []int{10086, 10010, 10000}
 	resp := new(response)
 	err := client.
 		Get("http://httpbin.org/get",
 			sreq.WithHeaders(sreq.Headers{
-				"Origin":  "http://httpbin.org",
-				"Referer": "http://httpbin.org",
+				"String":       "2019",
+				"Int":          2019,
+				"String-Array": stringArray,
+				"Int-Array":    intArray,
 			}),
 		).
 		EnsureStatusOk().
@@ -145,7 +159,9 @@ func TestWithHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Headers["Origin"] != "http://httpbin.org" || resp.Headers["Referer"] != "http://httpbin.org" {
+	if resp.Headers["String"] != "2019" || resp.Headers["Int"] != "2019" ||
+		resp.Headers["String-Array"] != "10086,10010,10000" ||
+		resp.Headers["Int-Array"] != "10086,10010,10000" {
 		t.Error("WithHeaders test failed")
 	}
 }
@@ -293,16 +309,25 @@ func TestWithText(t *testing.T) {
 
 func TestWithForm(t *testing.T) {
 	type response struct {
-		Form map[string]string `json:"form"`
+		Form struct {
+			String      string   `json:"string"`
+			Int         string   `json:"int"`
+			StringArray []string `json:"stringArray"`
+			IntArray    []string `json:"intArray"`
+		} `json:"form"`
 	}
 
 	client := sreq.New()
+	stringArray := []string{"10086", "10010", "10000"}
+	intArray := []int{10086, 10010, 10000}
 	resp := new(response)
 	err := client.
 		Post("http://httpbin.org/post",
 			sreq.WithForm(sreq.Form{
-				"k1": "v1",
-				"k2": "v2",
+				"string":      "2019",
+				"int":         2019,
+				"stringArray": stringArray,
+				"intArray":    intArray,
 			}),
 		).
 		EnsureStatusOk().
@@ -311,7 +336,9 @@ func TestWithForm(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Form["k1"] != "v1" || resp.Form["k2"] != "v2" {
+	if resp.Form.Int != "2019" || resp.Form.String != "2019" ||
+		!reflect.DeepEqual(resp.Form.StringArray, stringArray) ||
+		!reflect.DeepEqual(resp.Form.IntArray, stringArray) {
 		t.Error("WithForm test failed")
 	}
 }
@@ -387,43 +414,46 @@ func TestWithJSON(t *testing.T) {
 	}
 }
 
-func TestWithFiles(t *testing.T) {
-	client := sreq.New()
-	_, err := client.
-		Post("http://httpbin.org/post",
-			sreq.WithFiles(sreq.Files{
-				"field": "./testdata/file_not_exist.txt",
-			}),
-		).
-		EnsureStatusOk().
-		Raw()
-	if err == nil {
-		t.Error("WithFiles test failed")
-	}
-
-	_, err = client.
-		Post("http://httpbin.org/post",
-			sreq.WithFiles(sreq.Files{
-				"field": "./testdata",
-			}),
-		).
-		EnsureStatusOk().
-		Raw()
-	if err == nil {
-		t.Error("WithFiles test failed")
-	}
-
+func TestWithMultipart(t *testing.T) {
 	type response struct {
 		Files map[string]string `json:"files"`
+		Form  struct {
+			Keyword     string   `json:"keyword"`
+			String      string   `json:"string"`
+			Int         string   `json:"int"`
+			StringArray []string `json:"stringArray"`
+			IntArray    []string `json:"intArray"`
+		} `json:"form"`
 	}
 
+	files := sreq.Files{
+		"file1": {
+			Reader: sreq.MustOpen("./testdata/testfile1.txt"),
+			MIME:   "text/plain",
+		},
+		"file2": {
+			Reader: sreq.MustOpen("./testdata/Octocat.png"),
+			MIME:   "image/png",
+		},
+		"keyword": {
+			Reader: strings.NewReader("hello world"),
+		},
+	}
+
+	stringArray := []string{"10086", "10010", "10000"}
+	intArray := []int{10086, 10010, 10000}
+	form := sreq.Form{
+		"string":      "2019",
+		"int":         2019,
+		"stringArray": stringArray,
+		"intArray":    intArray,
+	}
+
+	client := sreq.New()
 	resp := new(response)
-	err = client.
+	err := client.
 		Post("http://httpbin.org/post",
-			sreq.WithFiles(sreq.Files{
-				"field1": "./testdata/testfile1.txt",
-				"field2": "./testdata/testfile2.txt",
-			}),
+			sreq.WithMultipart(files, form),
 		).
 		EnsureStatusOk().
 		JSON(resp)
@@ -431,8 +461,11 @@ func TestWithFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Files["field1"] != "testfile1.txt" || resp.Files["field2"] != "testfile2.txt" {
-		t.Error("WithFiles test failed")
+	if resp.Files["file1"] != "testfile1.txt" || resp.Form.Keyword != "hello world" ||
+		resp.Form.Int != "2019" || resp.Form.String != "2019" ||
+		!reflect.DeepEqual(resp.Form.StringArray, stringArray) ||
+		!reflect.DeepEqual(resp.Form.IntArray, stringArray) {
+		t.Error("WithMultipart test failed")
 	}
 }
 

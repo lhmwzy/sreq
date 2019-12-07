@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	stdurl "net/url"
+	"strconv"
 	"time"
 
 	"golang.org/x/net/publicsuffix"
@@ -728,12 +729,25 @@ func (c *Client) setHost(req *Request) {
 }
 
 func (c *Client) setHeaders(req *Request) {
-	for k, v := range c.Headers {
-		req.RawRequest.Header.Set(k, v)
+	for k, v := range req.Headers {
+		c.Headers.Set(k, v)
 	}
 
-	for k, v := range req.Headers {
-		req.RawRequest.Header.Set(k, v)
+	for k, v := range c.Headers {
+		switch v := v.(type) {
+		case string:
+			req.RawRequest.Header.Set(k, v)
+		case int:
+			req.RawRequest.Header.Set(k, strconv.Itoa(v))
+		case []string:
+			for _, vv := range v {
+				req.RawRequest.Header.Add(k, vv)
+			}
+		case []int:
+			for _, vv := range v {
+				req.RawRequest.Header.Add(k, strconv.Itoa(vv))
+			}
+		}
 	}
 }
 

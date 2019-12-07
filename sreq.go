@@ -3,7 +3,10 @@ package sreq
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -11,7 +14,7 @@ import (
 
 const (
 	// Version of sreq.
-	Version = "0.2.0"
+	Version = "0.3.0"
 )
 
 var (
@@ -19,20 +22,29 @@ var (
 )
 
 type (
-	// Params is the same as map[string]string, used for query params.
-	Params map[string]string
+	// Params is the same as map[string]interface{}, used for query params.
+	Params map[string]interface{}
 
-	// Headers is the same as map[string]string, used for request headers.
-	Headers map[string]string
+	// Headers is the same as map[string]interface{}, used for request headers.
+	Headers map[string]interface{}
 
-	// Form is the same as map[string]string, used for form-data.
-	Form map[string]string
+	// Form is the same as map[string]interface{}, used for form-data.
+	Form map[string]interface{}
 
 	// JSON is the same as map[string]interface{}, used for JSON payload.
 	JSON map[string]interface{}
 
-	// Files is the same as map[string]string, used for multipart-data.
-	Files map[string]string
+	// Files specifies files of multipart payload.
+	Files map[string]*FileForm
+
+	// FileForm specifies a file form.
+	// If the Reader isn't an *os.File instance and you do not specify the FileName,
+	// sreq will consider it as a form value.
+	FileForm struct {
+		Reader   io.Reader
+		FileName string
+		MIME     string
+	}
 
 	auth struct {
 		username string
@@ -58,44 +70,18 @@ func releaseBuffer(buf *bytes.Buffer) {
 }
 
 // Get returns the value from a map by the given key.
-func (p Params) Get(key string) string {
+func (p Params) Get(key string) interface{} {
 	return p[key]
 }
 
 // Set sets a kv pair into a map.
-func (p Params) Set(key string, value string) {
+func (p Params) Set(key string, value interface{}) {
 	p[key] = value
 }
 
 // Del deletes the value related to the given key from a map.
 func (p Params) Del(key string) {
 	delete(p, key)
-}
-
-// Clone returns a copy of p or nil if p is nil.
-func (p Params) Clone() Params {
-	if p == nil {
-		return nil
-	}
-
-	p2 := make(Params, len(p))
-	for k, v := range p {
-		p2[k] = v
-	}
-	return p2
-}
-
-// Merge merges params to the copy of p and returns the merged Params.
-func (p Params) Merge(params Params) Params {
-	p2 := p.Clone()
-	if p2 == nil {
-		return params
-	}
-
-	for k, v := range params {
-		p2[k] = v
-	}
-	return p2
 }
 
 // Encode encodes p into URL-unescaped form sorted by key.
@@ -109,12 +95,12 @@ func (p Params) String() string {
 }
 
 // Get returns the value from a map by the given key.
-func (h Headers) Get(key string) string {
+func (h Headers) Get(key string) interface{} {
 	return h[key]
 }
 
 // Set sets a kv pair into a map.
-func (h Headers) Set(key string, value string) {
+func (h Headers) Set(key string, value interface{}) {
 	h[key] = value
 }
 
@@ -123,76 +109,24 @@ func (h Headers) Del(key string) {
 	delete(h, key)
 }
 
-// Clone returns a copy of h or nil if h is nil.
-func (h Headers) Clone() Headers {
-	if h == nil {
-		return nil
-	}
-
-	h2 := make(Headers, len(h))
-	for k, v := range h {
-		h2[k] = v
-	}
-	return h2
-}
-
-// Merge merges headers to the copy of h and returns the merged Headers.
-func (h Headers) Merge(headers Headers) Headers {
-	h2 := h.Clone()
-	if h2 == nil {
-		return headers
-	}
-
-	for k, v := range headers {
-		h2[k] = v
-	}
-	return h2
-}
-
 // String returns the JSON-encoded text representation of h.
 func (h Headers) String() string {
 	return toJSON(h)
 }
 
 // Get returns the value from a map by the given key.
-func (f Form) Get(key string) string {
+func (f Form) Get(key string) interface{} {
 	return f[key]
 }
 
 // Set sets a kv pair into a map.
-func (f Form) Set(key string, value string) {
+func (f Form) Set(key string, value interface{}) {
 	f[key] = value
 }
 
 // Del deletes the value related to the given key from a map.
 func (f Form) Del(key string) {
 	delete(f, key)
-}
-
-// Clone returns a copy of f or nil if f is nil.
-func (f Form) Clone() Form {
-	if f == nil {
-		return nil
-	}
-
-	f2 := make(Form, len(f))
-	for k, v := range f {
-		f2[k] = v
-	}
-	return f2
-}
-
-// Merge merges form to the copy of f and returns the merged Form.
-func (f Form) Merge(form Form) Form {
-	f2 := f.Clone()
-	if f2 == nil {
-		return form
-	}
-
-	for k, v := range form {
-		f2[k] = v
-	}
-	return f2
 }
 
 // Encode encodes f into URL-unescaped form sorted by key.
@@ -220,44 +154,18 @@ func (j JSON) Del(key string) {
 	delete(j, key)
 }
 
-// Clone returns a copy of j or nil if j is nil.
-func (j JSON) Clone() JSON {
-	if j == nil {
-		return nil
-	}
-
-	j2 := make(JSON, len(j))
-	for k, v := range j {
-		j2[k] = v
-	}
-	return j2
-}
-
-// Merge merges data to the copy of j and returns the merged JSON.
-func (j JSON) Merge(data JSON) JSON {
-	j2 := j.Clone()
-	if j2 == nil {
-		return data
-	}
-
-	for k, v := range data {
-		j2[k] = v
-	}
-	return j2
-}
-
 // String returns the JSON-encoded text representation of j.
 func (j JSON) String() string {
 	return toJSON(j)
 }
 
 // Get returns the value from a map by the given key.
-func (f Files) Get(key string) string {
+func (f Files) Get(key string) *FileForm {
 	return f[key]
 }
 
 // Set sets a kv pair into a map.
-func (f Files) Set(key string, value string) {
+func (f Files) Set(key string, value *FileForm) {
 	f[key] = value
 }
 
@@ -266,27 +174,65 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// String returns the JSON-encoded text representation of f.
-func (f Files) String() string {
-	return toJSON(f)
+// MustOpen opens the named file for reading.
+// If there is an error, it will panic.
+func MustOpen(filename string) *os.File {
+	file, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	return file
 }
 
-func urlEncode(v map[string]string) string {
-	keys := make([]string, 0, len(v))
+func urlEncode(v map[string]interface{}) string {
+	m := len(v)
+	keys := make([]string, 0, m)
 	for k := range v {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
 	var sb strings.Builder
-	for _, k := range keys {
-		if sb.Len() > 0 {
-			sb.WriteString("&")
+	for i, k := range keys {
+		switch v := v[k].(type) {
+		case string:
+			sb.WriteString(k)
+			sb.WriteString("=")
+			sb.WriteString(v)
+		case int:
+			sb.WriteString(k)
+			sb.WriteString("=")
+			sb.WriteString(strconv.Itoa(v))
+		case []string:
+			n := len(v)
+			for j, vv := range v {
+				sb.WriteString(k)
+				sb.WriteString("=")
+				sb.WriteString(vv)
+
+				if j != n-1 {
+					sb.WriteString("&")
+				}
+			}
+		case []int:
+			n := len(v)
+			for j, vv := range v {
+				sb.WriteString(k)
+				sb.WriteString("=")
+				sb.WriteString(strconv.Itoa(vv))
+
+				if j != n-1 {
+					sb.WriteString("&")
+				}
+			}
+		default:
+			continue
 		}
 
-		sb.WriteString(k)
-		sb.WriteString("=")
-		sb.WriteString(v[k])
+		if i != m-1 {
+			sb.WriteString("&")
+		}
 	}
 
 	return sb.String()

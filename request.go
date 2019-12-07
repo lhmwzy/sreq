@@ -8,9 +8,10 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	stdurl "net/url"
 	"os"
-	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -215,7 +216,20 @@ func (req *Request) SetQuery(params Params) *Request {
 
 	query := req.RawRequest.URL.Query()
 	for k, v := range params {
-		query.Add(k, v)
+		switch v := v.(type) {
+		case int:
+			query.Set(k, strconv.Itoa(v))
+		case string:
+			query.Set(k, v)
+		case []string:
+			for _, vv := range v {
+				query.Add(k, vv)
+			}
+		case []int:
+			for _, vv := range v {
+				query.Add(k, strconv.Itoa(vv))
+			}
+		}
 	}
 
 	req.RawRequest.URL.RawQuery = query.Encode()
@@ -253,7 +267,20 @@ func (req *Request) SetForm(form Form) *Request {
 
 	data := stdurl.Values{}
 	for k, v := range form {
-		data.Add(k, v)
+		switch v := v.(type) {
+		case string:
+			data.Set(k, v)
+		case int:
+			data.Set(k, strconv.Itoa(v))
+		case []string:
+			for _, vv := range v {
+				data.Add(k, vv)
+			}
+		case []int:
+			for _, vv := range v {
+				data.Add(k, strconv.Itoa(vv))
+			}
+		}
 	}
 
 	r := strings.NewReader(data.Encode())
@@ -280,18 +307,16 @@ func (req *Request) SetJSON(data JSON, escapeHTML bool) *Request {
 	return req
 }
 
-// SetFiles sets files payload for the HTTP request.
-func (req *Request) SetFiles(files Files) *Request {
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
+}
+
+// SetMultipart sets multipart payload for the HTTP request.
+func (req *Request) SetMultipart(files Files, form Form) *Request {
 	if req.Err != nil {
 		return req
-	}
-
-	for fieldName, filePath := range files {
-		if _, err := existsFile(filePath); err != nil {
-			req.raiseError("SetFiles",
-				fmt.Errorf("file for [%s] not ready: %s", fieldName, err.Error()))
-			return req
-		}
 	}
 
 	pr, pw := io.Pipe()
@@ -300,21 +325,66 @@ func (req *Request) SetFiles(files Files) *Request {
 		defer pw.Close()
 		defer mw.Close()
 
-		for fieldName, filePath := range files {
-			fileName := filepath.Base(filePath)
-			part, err := mw.CreateFormFile(fieldName, fileName)
+		const (
+			fileFormat = `form-data; name="%s"; filename="%s"`
+			formFormat = `form-data; name="%s"`
+		)
+		var (
+			part io.Writer
+			err  error
+		)
+		for k, v := range files {
+			filename := v.FileName
+			cType := v.MIME
+			if cType == "" {
+				cType = "application/octet-stream"
+			}
+
+			switch vv := v.Reader.(type) {
+			case *os.File:
+				if filename == "" {
+					filename = vv.Name()
+				}
+			}
+
+			h := make(textproto.MIMEHeader)
+			if filename != "" {
+				h.Set("Content-Disposition",
+					fmt.Sprintf(fileFormat, escapeQuotes(k), escapeQuotes(filename)))
+				h.Set("Content-Type", cType)
+			} else {
+				h.Set("Content-Disposition",
+					fmt.Sprintf(formFormat, escapeQuotes(k)))
+			}
+
+			part, err = mw.CreatePart(h)
 			if err != nil {
 				return
 			}
 
-			file, err := os.Open(filePath)
+			_, err = io.Copy(part, v.Reader)
 			if err != nil {
 				return
 			}
+			if rc, ok := v.Reader.(io.Closer); ok {
+				rc.Close()
+			}
+		}
 
-			_, err = io.Copy(part, file)
-			if err != nil || file.Close() != nil {
-				return
+		for k, v := range form {
+			switch v := v.(type) {
+			case string:
+				mw.WriteField(k, v)
+			case int:
+				mw.WriteField(k, strconv.Itoa(v))
+			case []string:
+				for _, vv := range v {
+					mw.WriteField(k, vv)
+				}
+			case []int:
+				for _, vv := range v {
+					mw.WriteField(k, strconv.Itoa(vv))
+				}
 			}
 		}
 	}()
@@ -322,22 +392,6 @@ func (req *Request) SetFiles(files Files) *Request {
 	req.SetBody(pr)
 	req.SetContentType(mw.FormDataContentType())
 	return req
-}
-
-func existsFile(filename string) (bool, error) {
-	fi, err := os.Stat(filename)
-	if err == nil {
-		if fi.Mode().IsDir() {
-			return false, fmt.Errorf("%q is a directory", filename)
-		}
-		return true, nil
-	}
-
-	if os.IsNotExist(err) {
-		return false, err
-	}
-
-	return true, err
 }
 
 // SetCookies sets cookies for the HTTP request.
@@ -493,10 +547,10 @@ func WithJSON(data JSON, escapeHTML bool) RequestOption {
 	}
 }
 
-// WithFiles sets files payload for the HTTP request.
-func WithFiles(files Files) RequestOption {
+// WithMultipart sets multipart payload for the HTTP request.
+func WithMultipart(files Files, form Form) RequestOption {
 	return func(req *Request) *Request {
-		return req.SetFiles(files)
+		return req.SetMultipart(files, form)
 	}
 }
 
