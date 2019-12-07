@@ -46,11 +46,6 @@ type (
 		MIME     string
 	}
 
-	auth struct {
-		username string
-		password string
-	}
-
 	retry struct {
 		attempts   int
 		delay      time.Duration

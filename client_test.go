@@ -2,7 +2,6 @@ package sreq_test
 
 import (
 	"compress/gzip"
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -25,7 +24,7 @@ func TestClient_RaiseError(t *testing.T) {
 		pemFileExist = "./testdata/root-ca.pem"
 	)
 
-	_, err := sreq.New().
+	client := sreq.New().
 		SetProxyFromURL(invalidURL).
 		SetTransport(nil).
 		DisableSession().
@@ -37,30 +36,18 @@ func TestClient_RaiseError(t *testing.T) {
 		AppendClientCertificates(tls.Certificate{}).
 		AppendRootCAs(pemFileExist).
 		DisableVerify().
-		SetHost("httpbin.org").
-		SetHeaders(sreq.Headers{
-			"Origin": "http://httpbin.org",
-		}).
-		SetUserAgent("Go-http-client").
-		SetReferer("http://httpbin.org").
-		SetCookies(
-			&http.Cookie{
-				Name:  "uid",
-				Value: "10086",
-			},
-		).
-		SetBasicAuth("user", "pass").
-		SetBearerToken("sreq").
-		SetContext(context.Background()).
 		SetRetry(3, 1*time.Second).
 		UseRequestInterceptors(func(req *sreq.Request) error {
 			return nil
 		}).
 		UseResponseInterceptors(func(resp *sreq.Response) error {
 			return nil
-		}).
-		Raw()
-	if err == nil {
+		})
+
+	err := client.
+		Get("http://httpbin.org/get").
+		Verbose(ioutil.Discard)
+	if _, ok := err.(*sreq.ClientError); !ok {
 		t.Error("Client_RaiseError test failed")
 	}
 }
@@ -229,246 +216,6 @@ func TestClient_DisableVerify(t *testing.T) {
 	if !ok || transport == nil || transport.TLSClientConfig == nil ||
 		!transport.TLSClientConfig.InsecureSkipVerify {
 		t.Error("Client_DisableVerify test failed")
-	}
-}
-
-func TestClient_SetHost(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.Host))
-	}))
-	defer ts.Close()
-
-	client := sreq.New().SetHost("github.com")
-	data, err := client.
-		Get(ts.URL).
-		EnsureStatusOk().
-		Text()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if data != "github.com" {
-		t.Error("Client_SetHost test failed")
-	}
-
-	data, err = client.
-		Get(ts.URL,
-			sreq.WithHost("google.com"),
-		).
-		EnsureStatusOk().
-		Text()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if data != "google.com" {
-		t.Error("Client_SetHost test failed")
-	}
-}
-
-func TestClient_SetHeaders(t *testing.T) {
-	type response struct {
-		Headers map[string]string `json:"headers"`
-	}
-
-	client := sreq.New().SetHeaders(sreq.Headers{
-		"Origin":  "http://httpbin.org",
-		"Referer": "https://www.google.com",
-	})
-	resp := new(response)
-	err := client.
-		Get("http://httpbin.org/get",
-			sreq.WithHeaders(sreq.Headers{
-				"Referer": "http://httpbin.org",
-			}),
-		).
-		EnsureStatusOk().
-		JSON(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if resp.Headers["Origin"] != "http://httpbin.org" || resp.Headers["Referer"] != "http://httpbin.org" {
-		t.Error("Client_SetHeaders test failed")
-	}
-}
-
-func TestClient_SetUserAgent(t *testing.T) {
-	type response struct {
-		Headers map[string]string `json:"headers"`
-	}
-
-	client := sreq.New().SetUserAgent("Go-http-client")
-	resp := new(response)
-	err := client.
-		Get("http://httpbin.org/get").
-		EnsureStatusOk().
-		JSON(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if resp.Headers["User-Agent"] != "Go-http-client" {
-		t.Error("Client_SetUserAgent test failed")
-	}
-
-	_resp := new(response)
-	err = client.
-		Get("http://httpbin.org/get",
-			sreq.WithUserAgent("Go-sreq"),
-		).
-		EnsureStatusOk().
-		JSON(_resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if _resp.Headers["User-Agent"] != "Go-sreq" {
-		t.Error("Client_SetUserAgent test failed")
-	}
-}
-
-func TestClient_SetReferer(t *testing.T) {
-	type response struct {
-		Headers map[string]string `json:"headers"`
-	}
-
-	client := sreq.New().SetReferer("https://www.google.com")
-	resp := new(response)
-	err := client.
-		Get("http://httpbin.org/get").
-		EnsureStatusOk().
-		JSON(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if resp.Headers["Referer"] != "https://www.google.com" {
-		t.Error("Client_SetReferer test failed")
-	}
-}
-
-func TestClient_SetCookies(t *testing.T) {
-	type response struct {
-		Cookies map[string]string `json:"cookies"`
-	}
-
-	client := sreq.New().SetCookies(&http.Cookie{
-		Name:  "n1",
-		Value: "v1",
-	})
-	resp := new(response)
-	err := client.
-		Get("http://httpbin.org/cookies",
-			sreq.WithCookies(
-				&http.Cookie{
-					Name:  "n2",
-					Value: "v2",
-				},
-			),
-		).
-		EnsureStatusOk().
-		JSON(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if resp.Cookies["n1"] != "v1" || resp.Cookies["n2"] != "v2" {
-		t.Error("Client_AppendCookies test failed")
-	}
-}
-
-func TestClient_SetBasicAuth(t *testing.T) {
-	type response struct {
-		Authenticated bool   `json:"authenticated"`
-		User          string `json:"user"`
-	}
-
-	client := sreq.New().SetBasicAuth("admin", "pass")
-	resp := new(response)
-	err := client.
-		Get("http://httpbin.org/basic-auth/admin/pass").
-		EnsureStatusOk().
-		JSON(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !resp.Authenticated || resp.User != "admin" {
-		t.Error("Client_SetBasicAuth test failed")
-	}
-
-	_resp := new(response)
-	err = client.
-		Get("http://httpbin.org/basic-auth/hello/world",
-			sreq.WithBasicAuth("hello", "world"),
-		).
-		EnsureStatusOk().
-		JSON(_resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !_resp.Authenticated || _resp.User != "hello" {
-		t.Error("Client_SetBasicAuth test failed")
-	}
-}
-
-func TestClient_SetBearerToken(t *testing.T) {
-	type response struct {
-		Authenticated bool   `json:"authenticated"`
-		Token         string `json:"token"`
-	}
-
-	client := sreq.New().SetBearerToken("sreq")
-	resp := new(response)
-	err := client.
-		Get("http://httpbin.org/bearer").
-		EnsureStatusOk().
-		JSON(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !resp.Authenticated || resp.Token != "sreq" {
-		t.Error("Client_SetBearerToken test failed")
-	}
-
-	_resp := new(response)
-	err = client.
-		Get("http://httpbin.org/bearer",
-			sreq.WithBearerToken("hello"),
-		).
-		EnsureStatusOk().
-		JSON(_resp)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !_resp.Authenticated || _resp.Token != "hello" {
-		t.Error("Client_SetBearerToken test failed")
-	}
-}
-
-func TestClient_SetContext(t *testing.T) {
-	client := sreq.New().SetContext(nil)
-	err := client.
-		Get("http://httpbin.org/delay/10").
-		Verbose(ioutil.Discard)
-	if err == nil {
-		t.Error("nil Context not checked")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	client = sreq.New().SetContext(ctx)
-	err = client.
-		Get("http://httpbin.org/delay/5",
-			sreq.WithContext(context.Background()),
-		).
-		Verbose(ioutil.Discard)
-	if err != nil {
-		t.Error("Client_SetContext test failed")
 	}
 }
 
@@ -851,17 +598,6 @@ func testDefaultClientFilterCookie(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	sreq.SetHost("google.com")
-	sreq.SetHeaders(sreq.Headers{})
-	sreq.SetUserAgent("Go-http-client")
-	sreq.SetReferer("https://www.google.com")
-	sreq.SetCookies(&http.Cookie{
-		Name:  "uid",
-		Value: "10086",
-	})
-	sreq.SetBasicAuth("user", "pass")
-	sreq.SetBearerToken("sreq")
-	sreq.SetContext(context.Background())
 	condition := func(resp *sreq.Response) bool {
 		_, err := resp.Cookie("uid")
 		return err != nil

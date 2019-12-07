@@ -3,6 +3,7 @@ package sreq
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -49,16 +50,10 @@ type (
 	// Request wraps the raw HTTP request.
 	Request struct {
 		RawRequest *http.Request
-		Host       string
-		Headers    Headers
-		Cookies    []*http.Cookie
 		Timeout    time.Duration
 		Err        error
 
-		auth        *auth
-		bearerToken string
-		ctx         context.Context
-		retry       *retry
+		retry *retry
 	}
 
 	// RequestOption specifies a request options, like params, form, etc.
@@ -77,10 +72,7 @@ func (req *Request) raiseError(cause string, err error) {
 
 // NewRequest returns a new Request given a method, URL.
 func NewRequest(method string, url string) *Request {
-	req := &Request{
-		Headers: make(Headers),
-	}
-
+	req := new(Request)
 	rawRequest, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		req.raiseError("NewRequest", err)
@@ -162,7 +154,7 @@ func (req *Request) SetHost(host string) *Request {
 		return req
 	}
 
-	req.Host = host
+	req.RawRequest.Host = host
 	return req
 }
 
@@ -173,8 +165,31 @@ func (req *Request) SetHeaders(headers Headers) *Request {
 	}
 
 	for k, v := range headers {
-		req.Headers.Set(k, v)
+		switch v := v.(type) {
+		case string:
+			req.RawRequest.Header.Set(k, v)
+		case int:
+			req.RawRequest.Header.Set(k, strconv.Itoa(v))
+		case []string:
+			for _, vv := range v {
+				req.RawRequest.Header.Add(k, vv)
+			}
+		case []int:
+			for _, vv := range v {
+				req.RawRequest.Header.Add(k, strconv.Itoa(vv))
+			}
+		case []interface{}:
+			for _, vv := range v {
+				switch vv := vv.(type) {
+				case string:
+					req.RawRequest.Header.Add(k, vv)
+				case int:
+					req.RawRequest.Header.Add(k, strconv.Itoa(vv))
+				}
+			}
+		}
 	}
+
 	return req
 }
 
@@ -184,7 +199,7 @@ func (req *Request) SetContentType(contentType string) *Request {
 		return req
 	}
 
-	req.Headers.Set("Content-Type", contentType)
+	req.RawRequest.Header.Set("Content-Type", contentType)
 	return req
 }
 
@@ -194,7 +209,7 @@ func (req *Request) SetUserAgent(userAgent string) *Request {
 		return req
 	}
 
-	req.Headers.Set("User-Agent", userAgent)
+	req.RawRequest.Header.Set("User-Agent", userAgent)
 	return req
 }
 
@@ -204,7 +219,7 @@ func (req *Request) SetReferer(referer string) *Request {
 		return req
 	}
 
-	req.Headers.Set("Referer", referer)
+	req.RawRequest.Header.Set("Referer", referer)
 	return req
 }
 
@@ -331,31 +346,6 @@ func escapeQuotes(s string) string {
 	return quoteEscaper.Replace(s)
 }
 
-// SetMultipart sets multipart payload for the HTTP request.
-func (req *Request) SetMultipart(files Files, form Form) *Request {
-	if req.Err != nil {
-		return req
-	}
-
-	pr, pw := io.Pipe()
-	mw := multipart.NewWriter(pw)
-	go func() {
-		defer pw.Close()
-		defer mw.Close()
-
-		err := setFiles(mw, files)
-		if err != nil {
-			return
-		}
-
-		setForm(mw, form)
-	}()
-
-	req.SetBody(pr)
-	req.SetContentType(mw.FormDataContentType())
-	return req
-}
-
 func setFiles(mw *multipart.Writer, files Files) error {
 	const (
 		fileFormat = `form-data; name="%s"; filename="%s"`
@@ -435,14 +425,46 @@ func setForm(mw *multipart.Writer, form Form) {
 	}
 }
 
+// SetMultipart sets multipart payload for the HTTP request.
+func (req *Request) SetMultipart(files Files, form Form) *Request {
+	if req.Err != nil {
+		return req
+	}
+
+	pr, pw := io.Pipe()
+	mw := multipart.NewWriter(pw)
+	go func() {
+		defer pw.Close()
+		defer mw.Close()
+
+		err := setFiles(mw, files)
+		if err != nil {
+			return
+		}
+
+		setForm(mw, form)
+	}()
+
+	req.SetBody(pr)
+	req.SetContentType(mw.FormDataContentType())
+	return req
+}
+
 // SetCookies sets cookies for the HTTP request.
 func (req *Request) SetCookies(cookies ...*http.Cookie) *Request {
 	if req.Err != nil {
 		return req
 	}
 
-	req.Cookies = append(req.Cookies, cookies...)
+	for _, c := range cookies {
+		req.RawRequest.AddCookie(c)
+	}
 	return req
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 // SetBasicAuth sets basic authentication for the HTTP request.
@@ -451,10 +473,7 @@ func (req *Request) SetBasicAuth(username string, password string) *Request {
 		return req
 	}
 
-	req.auth = &auth{
-		username: username,
-		password: password,
-	}
+	req.RawRequest.Header.Set("Authorization", "Basic "+basicAuth(username, password))
 	return req
 }
 
@@ -464,7 +483,7 @@ func (req *Request) SetBearerToken(token string) *Request {
 		return req
 	}
 
-	req.bearerToken = token
+	req.RawRequest.Header.Set("Authorization", "Bearer "+token)
 	return req
 }
 
@@ -479,7 +498,7 @@ func (req *Request) SetContext(ctx context.Context) *Request {
 		return req
 	}
 
-	req.ctx = ctx
+	req.RawRequest = req.RawRequest.WithContext(ctx)
 	return req
 }
 
