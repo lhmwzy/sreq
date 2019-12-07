@@ -9,11 +9,11 @@
 - Requests-style APIs.
 - GET, POST, PUT, PATCH, DELETE, etc.
 - Easy set query params, headers and cookies.
-- Easy send form, JSON or files payload.
+- Easy send form, JSON or multipart payload.
 - Easy set basic authentication or bearer token.
 - Easy set proxy.
 - Easy set context.
-- Retry policy support.
+- Retry policy.
 - Automatic cookies management.
 - Request and response interceptors.
 - Easy decode responses, raw data, text representation and unmarshal the JSON-encoded data.
