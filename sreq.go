@@ -191,9 +191,45 @@ func addPair(sb *strings.Builder, k string, v string) {
 	sb.WriteString(v)
 }
 
+func setStringArray(sb *strings.Builder, k string, v []string) {
+	n := len(v)
+	for j, vv := range v {
+		addPair(sb, k, vv)
+		if j != n-1 {
+			sb.WriteString("&")
+		}
+	}
+}
+
+func setIntArray(sb *strings.Builder, k string, v []int) {
+	n := len(v)
+	for j, vv := range v {
+		addPair(sb, k, strconv.Itoa(vv))
+		if j != n-1 {
+			sb.WriteString("&")
+		}
+	}
+}
+
+func setStringIntArray(sb *strings.Builder, k string, v []interface{}) {
+	n := len(v)
+	for j, vv := range v {
+		switch vv := vv.(type) {
+		case string:
+			addPair(sb, k, vv)
+		case int:
+			addPair(sb, k, strconv.Itoa(vv))
+		}
+
+		if j != n-1 {
+			sb.WriteString("&")
+		}
+	}
+}
+
 func urlEncode(v map[string]interface{}) string {
-	m := len(v)
-	keys := make([]string, 0, m)
+	n := len(v)
+	keys := make([]string, 0, n)
 	for k := range v {
 		keys = append(keys, k)
 	}
@@ -207,40 +243,16 @@ func urlEncode(v map[string]interface{}) string {
 		case int:
 			addPair(&sb, k, strconv.Itoa(v))
 		case []string:
-			n := len(v)
-			for j, vv := range v {
-				addPair(&sb, k, vv)
-				if j != n-1 {
-					sb.WriteString("&")
-				}
-			}
+			setStringArray(&sb, k, v)
 		case []int:
-			n := len(v)
-			for j, vv := range v {
-				addPair(&sb, k, strconv.Itoa(vv))
-				if j != n-1 {
-					sb.WriteString("&")
-				}
-			}
+			setIntArray(&sb, k, v)
 		case []interface{}:
-			n := len(v)
-			for j, vv := range v {
-				switch vv := vv.(type) {
-				case string:
-					addPair(&sb, k, vv)
-				case int:
-					addPair(&sb, k, strconv.Itoa(vv))
-				}
-
-				if j != n-1 {
-					sb.WriteString("&")
-				}
-			}
+			setStringIntArray(&sb, k, v)
 		default:
 			continue
 		}
 
-		if i != m-1 {
+		if i != n-1 {
 			sb.WriteString("&")
 		}
 	}
