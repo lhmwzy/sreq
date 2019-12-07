@@ -107,12 +107,18 @@ func sendJSON() {
 }
 
 func uploadFiles() {
+	files := sreq.Files{
+		"file1": {
+			Reader: sreq.MustOpen("./testdata/testfile1.txt"),
+		},
+		"file2": {
+			Reader: sreq.MustOpen("./testdata/testfile2.txt"),
+			MIME:   "text/plain",
+		},
+	}
 	data, err := sreq.
 		Post("http://httpbin.org/post",
-			sreq.WithMultipart(sreq.Files{
-				"image1": "./testdata/testimage1.jpg",
-				"image2": "./testdata/testimage2.jpg",
-			}),
+			sreq.WithMultipart(files, nil),
 		).
 		Text()
 	if err != nil {
