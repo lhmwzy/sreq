@@ -43,13 +43,15 @@ func TestParams(t *testing.T) {
 	}
 
 	p = sreq.Params{
-		"string":      "2019",
-		"int":         2019,
-		"stringArray": []string{"10086", "10010", "10000"},
-		"intArray":    []int{10086, 10010, 10000},
+		"string":         "2019",
+		"int":            2019,
+		"stringArray":    []string{"10086", "10010"},
+		"intArray":       []int{10086, 10010},
+		"stringIntArray": []interface{}{"10086", 10010},
 	}
-	want = "int=2019&intArray=10086&intArray=10010&intArray=10000&" +
-		"string=2019&stringArray=10086&stringArray=10010&stringArray=10000"
+	want = "int=2019&intArray=10086&intArray=10010&" +
+		"string=2019&stringArray=10086&stringArray=10010&" +
+		"stringIntArray=10086&stringIntArray=10010"
 	if got := p.Encode(); got != want {
 		t.Errorf("Params_Encode got: %s, want: %s", got, want)
 	}
@@ -110,9 +112,10 @@ func TestForm(t *testing.T) {
 		"q":       []string{"Go语言", "Python"},
 		"offset":  0,
 		"limit":   100,
-		"invalid": []interface{}{"hello", 2019},
+		"msg":     []interface{}{"hello", 2019},
+		"invalid": []byte("invalid"),
 	}
-	want = "limit=100&offset=0&q=Go语言&q=Python"
+	want = "limit=100&msg=hello&msg=2019&offset=0&q=Go语言&q=Python"
 	if got := f.Encode(); got != want {
 		t.Errorf("Form_Encode got: %s, want: %s", got, want)
 	}

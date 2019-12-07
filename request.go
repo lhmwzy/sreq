@@ -229,6 +229,15 @@ func (req *Request) SetQuery(params Params) *Request {
 			for _, vv := range v {
 				query.Add(k, strconv.Itoa(vv))
 			}
+		case []interface{}:
+			for _, vv := range v {
+				switch vv := vv.(type) {
+				case string:
+					query.Add(k, vv)
+				case int:
+					query.Add(k, strconv.Itoa(vv))
+				}
+			}
 		}
 	}
 
@@ -279,6 +288,15 @@ func (req *Request) SetForm(form Form) *Request {
 		case []int:
 			for _, vv := range v {
 				data.Add(k, strconv.Itoa(vv))
+			}
+		case []interface{}:
+			for _, vv := range v {
+				switch vv := vv.(type) {
+				case string:
+					data.Add(k, vv)
+				case int:
+					data.Add(k, strconv.Itoa(vv))
+				}
 			}
 		}
 	}
@@ -403,6 +421,15 @@ func setForm(mw *multipart.Writer, form Form) {
 		case []int:
 			for _, vv := range v {
 				mw.WriteField(k, strconv.Itoa(vv))
+			}
+		case []interface{}:
+			for _, vv := range v {
+				switch vv := vv.(type) {
+				case string:
+					mw.WriteField(k, vv)
+				case int:
+					mw.WriteField(k, strconv.Itoa(vv))
+				}
 			}
 		}
 	}

@@ -747,6 +747,15 @@ func (c *Client) setHeaders(req *Request) {
 			for _, vv := range v {
 				req.RawRequest.Header.Add(k, strconv.Itoa(vv))
 			}
+		case []interface{}:
+			for _, vv := range v {
+				switch vv := vv.(type) {
+				case string:
+					req.RawRequest.Header.Add(k, vv)
+				case int:
+					req.RawRequest.Header.Add(k, strconv.Itoa(vv))
+				}
+			}
 		}
 	}
 }

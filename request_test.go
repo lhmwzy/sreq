@@ -80,24 +80,25 @@ func TestWithBody(t *testing.T) {
 func TestWithQuery(t *testing.T) {
 	type response struct {
 		Args struct {
-			String      string   `json:"string"`
-			Int         string   `json:"int"`
-			StringArray []string `json:"stringArray"`
-			IntArray    []string `json:"intArray"`
+			String         string   `json:"string"`
+			Int            string   `json:"int"`
+			StringArray    []string `json:"stringArray"`
+			IntArray       []string `json:"intArray"`
+			StringIntArray []string `json:"stringIntArray"`
 		} `json:"args"`
 	}
 
 	client := sreq.New()
 	stringArray := []string{"10086", "10010", "10000"}
-	intArray := []int{10086, 10010, 10000}
 	resp := new(response)
 	err := client.
 		Get("http://httpbin.org/get",
 			sreq.WithQuery(sreq.Params{
-				"string":      "2019",
-				"int":         2019,
-				"stringArray": stringArray,
-				"intArray":    intArray,
+				"string":         "2019",
+				"int":            2019,
+				"stringArray":    stringArray,
+				"intArray":       []int{10086, 10010, 10000},
+				"stringIntArray": []interface{}{"10086", 10010, 10000},
 			}),
 		).
 		EnsureStatusOk().
@@ -108,7 +109,8 @@ func TestWithQuery(t *testing.T) {
 
 	if resp.Args.Int != "2019" || resp.Args.String != "2019" ||
 		!reflect.DeepEqual(resp.Args.StringArray, stringArray) ||
-		!reflect.DeepEqual(resp.Args.IntArray, stringArray) {
+		!reflect.DeepEqual(resp.Args.IntArray, stringArray) ||
+		!reflect.DeepEqual(resp.Args.StringIntArray, stringArray) {
 		t.Error("WithQuery test failed")
 	}
 }
@@ -142,15 +144,15 @@ func TestWithHeaders(t *testing.T) {
 
 	client := sreq.New()
 	stringArray := []string{"10086", "10010", "10000"}
-	intArray := []int{10086, 10010, 10000}
 	resp := new(response)
 	err := client.
 		Get("http://httpbin.org/get",
 			sreq.WithHeaders(sreq.Headers{
-				"String":       "2019",
-				"Int":          2019,
-				"String-Array": stringArray,
-				"Int-Array":    intArray,
+				"String":           "2019",
+				"Int":              2019,
+				"String-Array":     stringArray,
+				"Int-Array":        []int{10086, 10010, 10000},
+				"String-Int-Array": []interface{}{"10086", 10010, 10000},
 			}),
 		).
 		EnsureStatusOk().
@@ -159,9 +161,11 @@ func TestWithHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	want := "10086,10010,10000"
 	if resp.Headers["String"] != "2019" || resp.Headers["Int"] != "2019" ||
-		resp.Headers["String-Array"] != "10086,10010,10000" ||
-		resp.Headers["Int-Array"] != "10086,10010,10000" {
+		resp.Headers["String-Array"] != want ||
+		resp.Headers["Int-Array"] != want ||
+		resp.Headers["String-Int-Array"] != want {
 		t.Error("WithHeaders test failed")
 	}
 }
@@ -310,24 +314,25 @@ func TestWithText(t *testing.T) {
 func TestWithForm(t *testing.T) {
 	type response struct {
 		Form struct {
-			String      string   `json:"string"`
-			Int         string   `json:"int"`
-			StringArray []string `json:"stringArray"`
-			IntArray    []string `json:"intArray"`
+			String         string   `json:"string"`
+			Int            string   `json:"int"`
+			StringArray    []string `json:"stringArray"`
+			IntArray       []string `json:"intArray"`
+			StringIntArray []string `json:"stringIntArray"`
 		} `json:"form"`
 	}
 
 	client := sreq.New()
 	stringArray := []string{"10086", "10010", "10000"}
-	intArray := []int{10086, 10010, 10000}
 	resp := new(response)
 	err := client.
 		Post("http://httpbin.org/post",
 			sreq.WithForm(sreq.Form{
-				"string":      "2019",
-				"int":         2019,
-				"stringArray": stringArray,
-				"intArray":    intArray,
+				"string":         "2019",
+				"int":            2019,
+				"stringArray":    stringArray,
+				"intArray":       []int{10086, 10010, 10000},
+				"stringIntArray": []interface{}{"10086", 10010, 10000},
 			}),
 		).
 		EnsureStatusOk().
@@ -338,7 +343,8 @@ func TestWithForm(t *testing.T) {
 
 	if resp.Form.Int != "2019" || resp.Form.String != "2019" ||
 		!reflect.DeepEqual(resp.Form.StringArray, stringArray) ||
-		!reflect.DeepEqual(resp.Form.IntArray, stringArray) {
+		!reflect.DeepEqual(resp.Form.IntArray, stringArray) ||
+		!reflect.DeepEqual(resp.Form.StringIntArray, stringArray) {
 		t.Error("WithForm test failed")
 	}
 }
@@ -418,22 +424,21 @@ func TestWithMultipart(t *testing.T) {
 	type response struct {
 		Files map[string]string `json:"files"`
 		Form  struct {
-			Keyword     string   `json:"keyword"`
-			String      string   `json:"string"`
-			Int         string   `json:"int"`
-			StringArray []string `json:"stringArray"`
-			IntArray    []string `json:"intArray"`
+			Keyword        string   `json:"keyword"`
+			String         string   `json:"string"`
+			Int            string   `json:"int"`
+			StringArray    []string `json:"stringArray"`
+			IntArray       []string `json:"intArray"`
+			StringIntArray []string `json:"stringIntArray"`
 		} `json:"form"`
 	}
 
 	files := sreq.Files{
 		"file1": {
 			Reader: sreq.MustOpen("./testdata/testfile1.txt"),
-			MIME:   "text/plain",
 		},
 		"file2": {
-			Reader: sreq.MustOpen("./testdata/Octocat.png"),
-			MIME:   "image/png",
+			Reader: sreq.MustOpen("./testdata/testfile2.txt"),
 		},
 		"keyword": {
 			Reader: strings.NewReader("hello world"),
@@ -441,12 +446,12 @@ func TestWithMultipart(t *testing.T) {
 	}
 
 	stringArray := []string{"10086", "10010", "10000"}
-	intArray := []int{10086, 10010, 10000}
 	form := sreq.Form{
-		"string":      "2019",
-		"int":         2019,
-		"stringArray": stringArray,
-		"intArray":    intArray,
+		"string":         "2019",
+		"int":            2019,
+		"stringArray":    stringArray,
+		"intArray":       []int{10086, 10010, 10000},
+		"stringIntArray": []interface{}{"10086", 10010, 10000},
 	}
 
 	client := sreq.New()
@@ -461,10 +466,12 @@ func TestWithMultipart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Files["file1"] != "testfile1.txt" || resp.Form.Keyword != "hello world" ||
+	if resp.Files["file1"] != "testfile1.txt" || resp.Files["file2"] != "testfile2.txt" ||
+		resp.Form.Keyword != "hello world" ||
 		resp.Form.Int != "2019" || resp.Form.String != "2019" ||
 		!reflect.DeepEqual(resp.Form.StringArray, stringArray) ||
-		!reflect.DeepEqual(resp.Form.IntArray, stringArray) {
+		!reflect.DeepEqual(resp.Form.IntArray, stringArray) ||
+		!reflect.DeepEqual(resp.Form.StringIntArray, stringArray) {
 		t.Error("WithMultipart test failed")
 	}
 }

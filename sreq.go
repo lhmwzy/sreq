@@ -185,6 +185,12 @@ func MustOpen(filename string) *os.File {
 	return file
 }
 
+func addPair(sb *strings.Builder, k string, v string) {
+	sb.WriteString(k)
+	sb.WriteString("=")
+	sb.WriteString(v)
+}
+
 func urlEncode(v map[string]interface{}) string {
 	m := len(v)
 	keys := make([]string, 0, m)
@@ -197,20 +203,13 @@ func urlEncode(v map[string]interface{}) string {
 	for i, k := range keys {
 		switch v := v[k].(type) {
 		case string:
-			sb.WriteString(k)
-			sb.WriteString("=")
-			sb.WriteString(v)
+			addPair(&sb, k, v)
 		case int:
-			sb.WriteString(k)
-			sb.WriteString("=")
-			sb.WriteString(strconv.Itoa(v))
+			addPair(&sb, k, strconv.Itoa(v))
 		case []string:
 			n := len(v)
 			for j, vv := range v {
-				sb.WriteString(k)
-				sb.WriteString("=")
-				sb.WriteString(vv)
-
+				addPair(&sb, k, vv)
 				if j != n-1 {
 					sb.WriteString("&")
 				}
@@ -218,9 +217,20 @@ func urlEncode(v map[string]interface{}) string {
 		case []int:
 			n := len(v)
 			for j, vv := range v {
-				sb.WriteString(k)
-				sb.WriteString("=")
-				sb.WriteString(strconv.Itoa(vv))
+				addPair(&sb, k, strconv.Itoa(vv))
+				if j != n-1 {
+					sb.WriteString("&")
+				}
+			}
+		case []interface{}:
+			n := len(v)
+			for j, vv := range v {
+				switch vv := vv.(type) {
+				case string:
+					addPair(&sb, k, vv)
+				case int:
+					addPair(&sb, k, strconv.Itoa(vv))
+				}
 
 				if j != n-1 {
 					sb.WriteString("&")
