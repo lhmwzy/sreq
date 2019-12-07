@@ -666,7 +666,8 @@ func TestAutoGzip(t *testing.T) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Content-Encoding", "gzip")
 		zw := gzip.NewWriter(w)
-		_, _ = zw.Write([]byte("hello world"))
+		q := r.URL.Query().Get("q")
+		_, _ = zw.Write([]byte(q))
 		zw.Close()
 	}))
 	defer ts.Close()
@@ -674,15 +675,18 @@ func TestAutoGzip(t *testing.T) {
 	client := sreq.New()
 	data, err := client.
 		Get(ts.URL,
+			sreq.WithQuery(sreq.Params{
+				"q": "hello",
+			}),
 			sreq.WithHeaders(sreq.Headers{
 				"Accept-Encoding": "gzip",
 			}),
 		).Text()
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
-	if data != "hello world" {
+	if data != "hello" {
 		t.Error("AutoGzip test failed")
 	}
 }

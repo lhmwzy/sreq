@@ -731,11 +731,15 @@ func (c *Client) setHost(req *Request) {
 }
 
 func (c *Client) setHeaders(req *Request) {
+	headers := make(Headers, len(c.Headers))
+	for k, v := range c.Headers {
+		headers.Set(k, v)
+	}
 	for k, v := range req.Headers {
-		c.Headers.Set(k, v)
+		headers.Set(k, v)
 	}
 
-	for k, v := range c.Headers {
+	for k, v := range headers {
 		switch v := v.(type) {
 		case string:
 			req.RawRequest.Header.Set(k, v)
@@ -868,9 +872,7 @@ func (c *Client) do(rawRequest *http.Request) (*http.Response, error) {
 		rawResponse.ContentLength != 0 {
 		if _, ok := rawResponse.Body.(*gzip.Reader); !ok {
 			rawResponse.Body, err = gzip.NewReader(rawResponse.Body)
-			if err != nil {
-				return rawResponse, err
-			}
+			return rawResponse, err
 		}
 	}
 
