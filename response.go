@@ -194,7 +194,7 @@ func (resp *Response) Verbose(w io.Writer) error {
 	}
 
 	if resp.body != nil {
-		fmt.Fprint(w, string(resp.body))
+		fmt.Fprintf(w, "%s\r\n", string(resp.body))
 		return nil
 	}
 
