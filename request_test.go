@@ -435,16 +435,14 @@ func TestWithMultipart(t *testing.T) {
 
 	files := sreq.Files{
 		"file1": sreq.
-			MustOpen("./testdata/testfile1.txt").
-			SetMIME("text/plain; charset=utf-8"),
+			MustOpen("./testdata/testfile1.txt"),
 		"file2": sreq.
-			MustOpen("./testdata/testfile2.txt").
-			SetFilename("testfile2.txt"),
+			MustOpen("./testdata/testfile2.txt"),
 		"file3": sreq.
-			NewFileForm(bytes.NewReader([]byte("This is a text file from memory"))).
+			NewFileForm(bytes.NewReader([]byte("<p>This is a text file from memory</p>"))).
 			SetFilename("testfile3.txt").
-			SetMIME("text/plain; charset=utf-8"),
-		"keyword": sreq.NewFileForm(strings.NewReader("hello world")),
+			SetMIME("text/html; charset=utf-8"),
+		"keyword": sreq.NewFileForm(strings.NewReader("Filename not specified, consider as a origin form")),
 	}
 
 	stringArray := []string{"10086", "10010", "10000"}
@@ -455,6 +453,9 @@ func TestWithMultipart(t *testing.T) {
 		"intArray":       []int{10086, 10010, 10000},
 		"stringIntArray": []interface{}{"10086", 10010, 10000},
 	}
+
+	// For Charles
+	// client := sreq.New().SetProxyFromURL("http://127.0.0.1:7777")
 
 	client := sreq.New()
 	resp := new(response)
@@ -469,8 +470,8 @@ func TestWithMultipart(t *testing.T) {
 	}
 
 	if resp.Files["file1"] != "testfile1.txt" || resp.Files["file2"] != "testfile2.txt" ||
-		resp.Files["file3"] != "This is a text file from memory" ||
-		resp.Form.Keyword != "hello world" ||
+		resp.Files["file3"] != "<p>This is a text file from memory</p>" ||
+		resp.Form.Keyword != "Filename not specified, consider as a origin form" ||
 		resp.Form.Int != "2019" || resp.Form.String != "2019" ||
 		!reflect.DeepEqual(resp.Form.StringArray, stringArray) ||
 		!reflect.DeepEqual(resp.Form.IntArray, stringArray) ||

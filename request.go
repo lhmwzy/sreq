@@ -1,6 +1,7 @@
 package sreq
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -11,7 +12,6 @@ import (
 	"net/http"
 	"net/textproto"
 	stdurl "net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -359,33 +359,28 @@ func setFiles(mw *multipart.Writer, files Files) error {
 	for k, v := range files {
 		filename := v.Filename
 		cType := v.MIME
-		if cType == "" {
-			cType = "application/octet-stream"
-		}
 
-		switch vv := v.Body.(type) {
-		case *os.File:
-			if filename == "" {
-				filename = vv.Name()
-			}
+		r := bufio.NewReader(v.Body)
+		if cType == "" {
+			data, _ := r.Peek(512)
+			cType = http.DetectContentType(data)
 		}
 
 		h := make(textproto.MIMEHeader)
 		if filename != "" {
 			h.Set("Content-Disposition",
 				fmt.Sprintf(fileFormat, escapeQuotes(k), escapeQuotes(filename)))
-			h.Set("Content-Type", cType)
 		} else {
 			h.Set("Content-Disposition",
 				fmt.Sprintf(formFormat, escapeQuotes(k)))
 		}
-
+		h.Set("Content-Type", cType)
 		part, err = mw.CreatePart(h)
 		if err != nil {
 			return err
 		}
 
-		_, err = io.Copy(part, v.Body)
+		_, err = io.Copy(part, r)
 		if err != nil {
 			return err
 		}

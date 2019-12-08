@@ -14,7 +14,7 @@ import (
 
 const (
 	// Version of sreq.
-	Version = "0.3.6"
+	Version = "0.3.7"
 
 	defaultUserAgent = "go-sreq/" + Version
 )
@@ -43,11 +43,12 @@ type (
 	Files map[string]*FileForm
 
 	// FileForm specifies a file form.
-	// If the Body isn't an *os.File instance and you do not specify the Filename,
-	// sreq will consider it as a form value.
+	// To upload a file you must specify its Filename field,
+	// otherwise sreq will consider it as a origin form, but not a file form.
+	// If you don't specify the MIME field, sreq will detect automatically using http.DetectContentType.
 	FileForm struct {
-		Body     io.Reader
 		Filename string
+		Body     io.Reader
 		MIME     string
 	}
 
@@ -203,7 +204,7 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// NewFileForm returns a *FileForm instance via a body.
+// NewFileForm returns a *FileForm instance given a body.
 func NewFileForm(body io.Reader) *FileForm {
 	return &FileForm{
 		Body: body,
@@ -222,7 +223,7 @@ func (ff *FileForm) SetMIME(mime string) *FileForm {
 	return ff
 }
 
-// MustOpen opens the named file and returns a *FileForm instance.
+// MustOpen opens the named file and returns a *FileForm instance whose Filename is filename.
 // If there is an error, it will panic.
 func MustOpen(filename string) *FileForm {
 	file, err := os.Open(filename)
@@ -230,7 +231,10 @@ func MustOpen(filename string) *FileForm {
 		panic(err)
 	}
 
-	return NewFileForm(file)
+	return &FileForm{
+		Filename: filename,
+		Body:     file,
+	}
 }
 
 func toJSON(data interface{}) string {
