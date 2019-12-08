@@ -14,7 +14,7 @@ import (
 
 const (
 	// Version of sreq.
-	Version = "0.3.2"
+	Version = "0.3.6"
 )
 
 var (
@@ -38,11 +38,11 @@ type (
 	Files map[string]*FileForm
 
 	// FileForm specifies a file form.
-	// If the Reader isn't an *os.File instance and you do not specify the FileName,
+	// If the Body isn't an *os.File instance and you do not specify the Filename,
 	// sreq will consider it as a form value.
 	FileForm struct {
-		Reader   io.Reader
-		FileName string
+		Body     io.Reader
+		Filename string
 		MIME     string
 	}
 
@@ -169,15 +169,34 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// MustOpen opens the named file for reading.
+// NewFileForm returns a *FileForm instance via a body.
+func NewFileForm(body io.Reader) *FileForm {
+	return &FileForm{
+		Body: body,
+	}
+}
+
+// SetMIME sets Filename field value of ff.
+func (ff *FileForm) SetFilename(filename string) *FileForm {
+	ff.Filename = filename
+	return ff
+}
+
+// SetMIME sets MIME field value of ff.
+func (ff *FileForm) SetMIME(mime string) *FileForm {
+	ff.MIME = mime
+	return ff
+}
+
+// MustOpen opens the named file and returns a *FileForm instance.
 // If there is an error, it will panic.
-func MustOpen(filename string) *os.File {
+func MustOpen(filename string) *FileForm {
 	file, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 
-	return file
+	return NewFileForm(file)
 }
 
 func addPair(sb *strings.Builder, k string, v string) {

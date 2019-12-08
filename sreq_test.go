@@ -169,12 +169,12 @@ func TestFiles(t *testing.T) {
 	f := make(sreq.Files)
 
 	f.Set("file1", &sreq.FileForm{
-		Reader: &os.File{},
-		MIME:   "image/png",
+		Body: &os.File{},
+		MIME: "image/png",
 	})
 	f.Set("file2", &sreq.FileForm{
-		Reader: strings.NewReader("hello world"),
-		MIME:   "text/plain",
+		Body: strings.NewReader("hello world"),
+		MIME: "text/plain",
 	})
 
 	if len(f) != 2 {

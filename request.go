@@ -357,13 +357,13 @@ func setFiles(mw *multipart.Writer, files Files) error {
 		err  error
 	)
 	for k, v := range files {
-		filename := v.FileName
+		filename := v.Filename
 		cType := v.MIME
 		if cType == "" {
 			cType = "application/octet-stream"
 		}
 
-		switch vv := v.Reader.(type) {
+		switch vv := v.Body.(type) {
 		case *os.File:
 			if filename == "" {
 				filename = vv.Name()
@@ -385,11 +385,11 @@ func setFiles(mw *multipart.Writer, files Files) error {
 			return err
 		}
 
-		_, err = io.Copy(part, v.Reader)
+		_, err = io.Copy(part, v.Body)
 		if err != nil {
 			return err
 		}
-		if rc, ok := v.Reader.(io.Closer); ok {
+		if rc, ok := v.Body.(io.Closer); ok {
 			rc.Close()
 		}
 	}

@@ -109,11 +109,11 @@ func sendJSON() {
 func uploadFiles() {
 	files := sreq.Files{
 		"file1": {
-			Reader: sreq.MustOpen("./testdata/testfile1.txt"),
+			Body: sreq.MustOpen("./testdata/testfile1.txt"),
 		},
 		"file2": {
-			Reader: sreq.MustOpen("./testdata/testfile2.txt"),
-			MIME:   "text/plain",
+			Body: sreq.MustOpen("./testdata/testfile2.txt"),
+			MIME: "text/plain",
 		},
 	}
 	data, err := sreq.
