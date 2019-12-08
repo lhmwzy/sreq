@@ -389,8 +389,8 @@ func setFiles(mw *multipart.Writer, files Files) error {
 		if err != nil {
 			return err
 		}
-		if rc, ok := v.Body.(io.Closer); ok {
-			rc.Close()
+		if c, ok := v.Body.(io.Closer); ok {
+			c.Close()
 		}
 	}
 

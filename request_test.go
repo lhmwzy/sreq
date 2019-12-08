@@ -65,7 +65,7 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestWithBody(t *testing.T) {
-	body := bytes.NewBuffer([]byte("hello world"))
+	body := bytes.NewBuffer([]byte{})
 	client := sreq.New()
 	err := client.
 		Post("http://httpbin.org/post",

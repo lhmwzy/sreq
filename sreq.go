@@ -84,6 +84,38 @@ func (v Values) Del(key string) {
 	delete(v, key)
 }
 
+func addPair(sb *strings.Builder, k string, v string) {
+	if sb.Len() > 0 {
+		sb.WriteString("&")
+	}
+	sb.WriteString(k)
+	sb.WriteString("=")
+	sb.WriteString(v)
+}
+
+func setStringArray(sb *strings.Builder, k string, v []string) {
+	for _, vs := range v {
+		addPair(sb, k, vs)
+	}
+}
+
+func setIntArray(sb *strings.Builder, k string, v []int) {
+	for _, vs := range v {
+		addPair(sb, k, strconv.Itoa(vs))
+	}
+}
+
+func setStringIntArray(sb *strings.Builder, k string, v []interface{}) {
+	for _, vs := range v {
+		switch vs := vs.(type) {
+		case string:
+			addPair(sb, k, vs)
+		case int:
+			addPair(sb, k, strconv.Itoa(vs))
+		}
+	}
+}
+
 // Encode encodes v into URL-unescaped form sorted by key.
 func (v Values) Encode() string {
 	keys := make([]string, 0, len(v))
@@ -199,38 +231,6 @@ func MustOpen(filename string) *FileForm {
 	}
 
 	return NewFileForm(file)
-}
-
-func addPair(sb *strings.Builder, k string, v string) {
-	if sb.Len() > 0 {
-		sb.WriteString("&")
-	}
-	sb.WriteString(k)
-	sb.WriteString("=")
-	sb.WriteString(v)
-}
-
-func setStringArray(sb *strings.Builder, k string, v []string) {
-	for _, vs := range v {
-		addPair(sb, k, vs)
-	}
-}
-
-func setIntArray(sb *strings.Builder, k string, v []int) {
-	for _, vs := range v {
-		addPair(sb, k, strconv.Itoa(vs))
-	}
-}
-
-func setStringIntArray(sb *strings.Builder, k string, v []interface{}) {
-	for _, vs := range v {
-		switch vs := vs.(type) {
-		case string:
-			addPair(sb, k, vs)
-		case int:
-			addPair(sb, k, strconv.Itoa(vs))
-		}
-	}
 }
 
 func toJSON(data interface{}) string {

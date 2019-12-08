@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -364,11 +363,7 @@ func TestClient_FilterCookie(t *testing.T) {
 		t.Error("Client_FilterCookie test failed")
 	}
 
-	jar, _ := cookiejar.New(&cookiejar.Options{
-		PublicSuffixList: publicsuffix.List,
-	})
-	client = sreq.New().SetCookieJar(jar)
-
+	client = sreq.New()
 	_, err = client.FilterCookies(ts.URL)
 	if err != sreq.ErrJarCookiesNotPresent {
 		t.Error("Client_FilterCookies test failed")
@@ -382,6 +377,11 @@ func TestClient_FilterCookie(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, err = client.FilterCookie(ts.URL, "uuid")
+	if err != sreq.ErrJarNamedCookieNotPresent {
+		t.Error("Client_FilterCookie test failed")
+	}
+
 	cookie, err = client.FilterCookie(ts.URL, "uid")
 	if err != nil {
 		t.Fatal(err)
@@ -390,8 +390,8 @@ func TestClient_FilterCookie(t *testing.T) {
 		t.Errorf("the cookie value expected to be: %s, but got: %s", "10086", got)
 	}
 
-	_, err = client.FilterCookie(ts.URL, "uuid")
-	if err != sreq.ErrJarNamedCookieNotPresent {
+	_, err = client.FilterCookie("http://127.0.0.1:8080^", "uid")
+	if err == nil {
 		t.Error("Client_FilterCookie test failed")
 	}
 }
@@ -472,7 +472,7 @@ func TestAutoGzip(t *testing.T) {
 			sreq.WithHeaders(sreq.Headers{
 				"Accept-Encoding": "gzip",
 			}),
-		).Verbose(os.Stdout)
+		).Verbose(ioutil.Discard)
 	if err != nil {
 		t.Error(err)
 	}
