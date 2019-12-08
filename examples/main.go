@@ -108,13 +108,8 @@ func sendJSON() {
 
 func uploadFiles() {
 	files := sreq.Files{
-		"file1": {
-			Body: sreq.MustOpen("./testdata/testfile1.txt"),
-		},
-		"file2": {
-			Body: sreq.MustOpen("./testdata/testfile2.txt"),
-			MIME: "text/plain",
-		},
+		"file1": sreq.MustOpen("./testdata/testfile1.txt"),
+		"file2": sreq.MustOpen("./testdata/testfile2.txt").SetMIME("text/plain; charset=utf-8"),
 	}
 	data, err := sreq.
 		Post("http://httpbin.org/post",
