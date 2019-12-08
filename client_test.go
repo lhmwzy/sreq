@@ -253,7 +253,7 @@ func TestClient_SetRetry(t *testing.T) {
 func TestClient_UseRequestInterceptors(t *testing.T) {
 	logInterceptor := func(req *sreq.Request) error {
 		rawRequest := req.RawRequest
-		var w io.Writer = ioutil.Discard
+		var w = ioutil.Discard
 		fmt.Fprintf(w, "> %s %s %s\r\n", rawRequest.Method, rawRequest.URL.RequestURI(), rawRequest.Proto)
 		fmt.Fprintf(w, "> Host: %s\r\n", rawRequest.URL.Host)
 		for k := range rawRequest.Header {
@@ -310,7 +310,7 @@ func TestClient_UseRequestInterceptors(t *testing.T) {
 
 func TestClient_UseResponseInterceptors(t *testing.T) {
 	logInterceptor := func(resp *sreq.Response) error {
-		var w io.Writer = ioutil.Discard
+		var w = ioutil.Discard
 		rawResponse := resp.RawResponse
 		fmt.Fprintf(w, "< %s %s\r\n", rawResponse.Proto, rawResponse.Status)
 		for k := range rawResponse.Header {
@@ -418,6 +418,47 @@ func TestAutoGzip(t *testing.T) {
 		zw.Close()
 	}))
 	defer ts.Close()
+
+	// transport := &http.Transport{
+	// 	DialContext: printLocalDial,
+	// }
+	// client := sreq.New().SetTransport(transport)
+	//
+	// for {
+	// 	go func() {
+	// 		data, err := client.
+	// 			Get(ts.URL,
+	// 				sreq.WithQuery(sreq.Params{
+	// 					"q": "hello",
+	// 				}),
+	// 				sreq.WithHeaders(sreq.Headers{
+	// 					"Accept-Encoding": "gzip",
+	// 				}),
+	// 			).Text()
+	// 		if err != nil {
+	// 			return
+	// 		}
+	// 		fmt.Println(data)
+	// 	}()
+	//
+	// 	go func() {
+	// 		data, err := client.
+	// 			Get(ts.URL,
+	// 				sreq.WithQuery(sreq.Params{
+	// 					"q": "hi",
+	// 				}),
+	// 				sreq.WithHeaders(sreq.Headers{
+	// 					"Accept-Encoding": "gzip",
+	// 				}),
+	// 			).Text()
+	// 		if err != nil {
+	// 			return
+	// 		}
+	// 		fmt.Println(data)
+	// 	}()
+	//
+	// 	time.Sleep(1 * time.Second)
+	// }
 
 	client := sreq.New()
 	data, err := client.

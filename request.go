@@ -289,7 +289,7 @@ func (req *Request) SetForm(form Form) *Request {
 		return req
 	}
 
-	data := stdurl.Values{}
+	data := make(stdurl.Values, len(form))
 	for k, v := range form {
 		switch v := v.(type) {
 		case string:

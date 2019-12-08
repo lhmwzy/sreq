@@ -608,7 +608,9 @@ func (c *Client) do(rawRequest *http.Request) (*http.Response, error) {
 	if strings.EqualFold(rawResponse.Header.Get("Content-Encoding"), "gzip") &&
 		rawResponse.ContentLength != 0 {
 		if _, ok := rawResponse.Body.(*gzip.Reader); !ok {
-			rawResponse.Body, err = gzip.NewReader(rawResponse.Body)
+			body, err := gzip.NewReader(rawResponse.Body)
+			rawResponse.Body.Close()
+			rawResponse.Body = body
 			return rawResponse, err
 		}
 	}

@@ -65,7 +65,7 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestWithBody(t *testing.T) {
-	body := bytes.NewBuffer([]byte{})
+	body := bytes.NewBuffer([]byte("hello world"))
 	client := sreq.New()
 	err := client.
 		Post("http://httpbin.org/post",
@@ -436,6 +436,7 @@ func TestWithMultipart(t *testing.T) {
 	files := sreq.Files{
 		"file1": {
 			Reader: sreq.MustOpen("./testdata/testfile1.txt"),
+			MIME:   "text/plain; charset=utf-8",
 		},
 		"file2": {
 			Reader: sreq.MustOpen("./testdata/testfile2.txt"),

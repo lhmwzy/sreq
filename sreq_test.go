@@ -1,14 +1,34 @@
 package sreq_test
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"net"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/winterssy/sreq"
 )
+
+// 用于测试 Client 是否复用连接
+func printLocalDial(ctx context.Context, network, addr string) (net.Conn, error) {
+	dial := net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
+	conn, err := dial.DialContext(ctx, network, addr)
+	if err != nil {
+		return conn, err
+	}
+
+	fmt.Printf("network connected at %s\n", conn.LocalAddr().String())
+	return conn, err
+}
 
 func TestParams(t *testing.T) {
 	p := make(sreq.Params)
