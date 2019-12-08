@@ -10,7 +10,7 @@ import (
 
 // DefaultTransport returns an HTTP transport used by DefaultClient.
 // It's a clone of http.DefaultTransport indeed.
-func DefaultTransport() http.RoundTripper {
+func DefaultTransport() *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
