@@ -176,7 +176,7 @@ func NewFileForm(body io.Reader) *FileForm {
 	}
 }
 
-// SetMIME sets Filename field value of ff.
+// SetFilename sets Filename field value of ff.
 func (ff *FileForm) SetFilename(filename string) *FileForm {
 	ff.Filename = filename
 	return ff
