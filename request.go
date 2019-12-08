@@ -79,7 +79,7 @@ func NewRequest(method string, url string) *Request {
 		return req
 	}
 
-	rawRequest.Header.Set("User-Agent", "go-sreq/"+Version)
+	rawRequest.Header.Set("User-Agent", defaultUserAgent)
 	req.RawRequest = rawRequest
 	return req
 }

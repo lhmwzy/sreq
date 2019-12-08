@@ -30,39 +30,41 @@ func printLocalDial(ctx context.Context, network, addr string) (net.Conn, error)
 	return conn, err
 }
 
-func TestParams(t *testing.T) {
-	p := make(sreq.Params)
+func TestValues(t *testing.T) {
+	v := make(sreq.Values)
 
-	p.Set("k1", "v1")
-	p.Set("k2", "v2")
-	p.Set("k3", "v3")
-	if p["k1"] != "v1" || p["k2"] != "v2" || p["k3"] != "v3" {
-		t.Fatal("Params_Set test failed")
+	v.Set("k1", "v1")
+	v.Set("k2", "v2")
+	v.Set("k3", "v3")
+	if v["k1"] != "v1" || v["k2"] != "v2" || v["k3"] != "v3" {
+		t.Fatal("Values_Set test failed")
 	}
 
-	if p.Get("k1") != "v1" || p.Get("k2") != "v2" || p.Get("k3") != "v3" {
-		t.Error("Params_Get test failed")
+	if v.Get("k1") != "v1" || v.Get("k2") != "v2" || v.Get("k3") != "v3" {
+		t.Error("Values_Get test failed")
 	}
 
-	p.Del("k1")
-	if p["k1"] != nil || len(p) != 2 {
-		t.Error("Params_Del test failed")
+	v.Del("k1")
+	if v["k1"] != nil || len(v) != 2 {
+		t.Error("Values_Del test failed")
 	}
 
 	want := "k2=v2&k3=v3"
-	if got := p.String(); got != want {
-		t.Errorf("Params_String got: %s, want: %s", got, want)
+	if got := v.String(); got != want {
+		t.Errorf("Values_String got: %s, want: %s", got, want)
 	}
 
-	p = sreq.Params{
-		"e": "user/pass",
+	v = sreq.Params{
+		"q":      "Go语言",
+		"offset": 0,
+		"limit":  100,
 	}
-	want = "e=user/pass"
-	if got := p.Encode(); got != want {
-		t.Errorf("Params_Encode got: %s, want: %s", got, want)
+	want = "limit=100&offset=0&q=Go语言"
+	if got := v.Encode(); got != want {
+		t.Errorf("Values_Encode got: %s, want: %s", got, want)
 	}
 
-	p = sreq.Params{
+	v = sreq.Params{
 		"string":         "2019",
 		"int":            2019,
 		"stringArray":    []string{"10086", "10010"},
@@ -72,8 +74,8 @@ func TestParams(t *testing.T) {
 	want = "int=2019&intArray=10086&intArray=10010&" +
 		"string=2019&stringArray=10086&stringArray=10010&" +
 		"stringIntArray=10086&stringIntArray=10010"
-	if got := p.Encode(); got != want {
-		t.Errorf("Params_Encode got: %s, want: %s", got, want)
+	if got := v.Encode(); got != want {
+		t.Errorf("Values_Encode got: %s, want: %s", got, want)
 	}
 }
 
@@ -101,43 +103,6 @@ func TestHeaders(t *testing.T) {
 	}
 	if !reflect.DeepEqual(h2, h1) {
 		t.Error("Headers_String test failed")
-	}
-}
-
-func TestForm(t *testing.T) {
-	f := make(sreq.Form)
-
-	f.Set("k1", "v1")
-	f.Set("k2", "v2")
-	f.Set("k3", "v3")
-	if f["k1"] != "v1" || f["k2"] != "v2" || f["k3"] != "v3" {
-		t.Fatal("Form_Set test failed")
-	}
-
-	if f.Get("k1") != "v1" || f.Get("k2") != "v2" || f.Get("k3") != "v3" {
-		t.Error("Form_Get test failed")
-	}
-
-	f.Del("k1")
-	if f["k1"] != nil || len(f) != 2 {
-		t.Error("Form_Del test failed")
-	}
-
-	want := "k2=v2&k3=v3"
-	if got := f.String(); got != want {
-		t.Errorf("Form_String got: %s, want: %s", got, want)
-	}
-
-	f = sreq.Form{
-		"q":       []string{"Go语言", "Python"},
-		"offset":  0,
-		"limit":   100,
-		"msg":     []interface{}{"hello", 2019},
-		"invalid": []byte("invalid"),
-	}
-	want = "limit=100&msg=hello&msg=2019&offset=0&q=Go语言&q=Python"
-	if got := f.Encode(); got != want {
-		t.Errorf("Form_Encode got: %s, want: %s", got, want)
 	}
 }
 

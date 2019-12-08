@@ -15,6 +15,8 @@ import (
 const (
 	// Version of sreq.
 	Version = "0.3.6"
+
+	defaultUserAgent = "go-sreq/" + Version
 )
 
 var (
@@ -22,14 +24,17 @@ var (
 )
 
 type (
-	// Params is the same as map[string]interface{}, used for query params.
-	Params map[string]interface{}
+	// Values is the same as map[string]interface{}, used for query params and form.
+	Values map[string]interface{}
+
+	// Params is an alias of Values.
+	Params = Values
+
+	// Form is an alias of Values.
+	Form = Values
 
 	// Headers is the same as map[string]interface{}, used for request headers.
 	Headers map[string]interface{}
-
-	// Form is the same as map[string]interface{}, used for form-data.
-	Form map[string]interface{}
 
 	// JSON is the same as map[string]interface{}, used for JSON payload.
 	JSON map[string]interface{}
@@ -64,32 +69,54 @@ func releaseBuffer(buf *bytes.Buffer) {
 	}
 }
 
-// Get returns the value from a map by the given key.
-func (p Params) Get(key string) interface{} {
-	return p[key]
+// Get returns the value related to the given key from a map.
+func (v Values) Get(key string) interface{} {
+	return v[key]
 }
 
 // Set sets a kv pair into a map.
-func (p Params) Set(key string, value interface{}) {
-	p[key] = value
+func (v Values) Set(key string, value interface{}) {
+	v[key] = value
 }
 
 // Del deletes the value related to the given key from a map.
-func (p Params) Del(key string) {
-	delete(p, key)
+func (v Values) Del(key string) {
+	delete(v, key)
 }
 
-// Encode encodes p into URL-unescaped form sorted by key.
-func (p Params) Encode() string {
-	return urlEncode(p)
+// Encode encodes v into URL-unescaped form sorted by key.
+func (v Values) Encode() string {
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var sb strings.Builder
+	for _, k := range keys {
+		switch v := v[k].(type) {
+		case string:
+			addPair(&sb, k, v)
+		case int:
+			addPair(&sb, k, strconv.Itoa(v))
+		case []string:
+			setStringArray(&sb, k, v)
+		case []int:
+			setIntArray(&sb, k, v)
+		case []interface{}:
+			setStringIntArray(&sb, k, v)
+		}
+	}
+
+	return sb.String()
 }
 
-// String returns the text representation of p.
-func (p Params) String() string {
-	return p.Encode()
+// String returns the text representation of v.
+func (v Values) String() string {
+	return v.Encode()
 }
 
-// Get returns the value from a map by the given key.
+// Get returns the value related to the given key from a map.
 func (h Headers) Get(key string) interface{} {
 	return h[key]
 }
@@ -109,32 +136,7 @@ func (h Headers) String() string {
 	return toJSON(h)
 }
 
-// Get returns the value from a map by the given key.
-func (f Form) Get(key string) interface{} {
-	return f[key]
-}
-
-// Set sets a kv pair into a map.
-func (f Form) Set(key string, value interface{}) {
-	f[key] = value
-}
-
-// Del deletes the value related to the given key from a map.
-func (f Form) Del(key string) {
-	delete(f, key)
-}
-
-// Encode encodes f into URL-unescaped form sorted by key.
-func (f Form) Encode() string {
-	return urlEncode(f)
-}
-
-// String returns the text representation of f.
-func (f Form) String() string {
-	return f.Encode()
-}
-
-// Get returns the value from a map by the given key.
+// Get returns the value related to the given key from a map.
 func (j JSON) Get(key string) interface{} {
 	return j[key]
 }
@@ -154,7 +156,7 @@ func (j JSON) String() string {
 	return toJSON(j)
 }
 
-// Get returns the value from a map by the given key.
+// Get returns the value related to the given key from a map.
 func (f Files) Get(key string) *FileForm {
 	return f[key]
 }
@@ -229,32 +231,6 @@ func setStringIntArray(sb *strings.Builder, k string, v []interface{}) {
 			addPair(sb, k, strconv.Itoa(vs))
 		}
 	}
-}
-
-func urlEncode(v map[string]interface{}) string {
-	keys := make([]string, 0, len(v))
-	for k := range v {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	var sb strings.Builder
-	for _, k := range keys {
-		switch v := v[k].(type) {
-		case string:
-			addPair(&sb, k, v)
-		case int:
-			addPair(&sb, k, strconv.Itoa(v))
-		case []string:
-			setStringArray(&sb, k, v)
-		case []int:
-			setIntArray(&sb, k, v)
-		case []interface{}:
-			setStringIntArray(&sb, k, v)
-		}
-	}
-
-	return sb.String()
 }
 
 func toJSON(data interface{}) string {
