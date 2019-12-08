@@ -189,6 +189,10 @@ func (resp *Response) Verbose(w io.Writer) error {
 	}
 	fmt.Fprint(w, "<\r\n")
 
+	if resp.RawResponse.ContentLength == 0 {
+		return nil
+	}
+
 	if resp.body != nil {
 		fmt.Fprint(w, string(resp.body))
 		return nil

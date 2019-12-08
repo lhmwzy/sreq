@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -412,8 +413,13 @@ func TestAutoGzip(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Content-Encoding", "gzip")
-		zw := gzip.NewWriter(w)
+
 		q := r.URL.Query().Get("q")
+		if q == "" {
+			return
+		}
+
+		zw := gzip.NewWriter(w)
 		_, _ = zw.Write([]byte(q))
 		zw.Close()
 	}))
@@ -461,6 +467,16 @@ func TestAutoGzip(t *testing.T) {
 	// }
 
 	client := sreq.New()
+	err := client.
+		Get(ts.URL,
+			sreq.WithHeaders(sreq.Headers{
+				"Accept-Encoding": "gzip",
+			}),
+		).Verbose(os.Stdout)
+	if err != nil {
+		t.Error(err)
+	}
+
 	data, err := client.
 		Get(ts.URL,
 			sreq.WithQuery(sreq.Params{
