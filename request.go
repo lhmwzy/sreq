@@ -370,11 +370,11 @@ func setFiles(mw *multipart.Writer, files Files) error {
 		if filename != "" {
 			h.Set("Content-Disposition",
 				fmt.Sprintf(fileFormat, escapeQuotes(k), escapeQuotes(filename)))
+			h.Set("Content-Type", cType)
 		} else {
 			h.Set("Content-Disposition",
 				fmt.Sprintf(formFormat, escapeQuotes(k)))
 		}
-		h.Set("Content-Type", cType)
 		part, err = mw.CreatePart(h)
 		if err != nil {
 			return err
