@@ -176,10 +176,11 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// NewFileForm returns a *FileForm instance given a body.
-func NewFileForm(body io.Reader) *FileForm {
+// NewFileForm returns a *FileForm instance given a filename and its body.
+func NewFileForm(filename string, body io.Reader) *FileForm {
 	return &FileForm{
-		Body: body,
+		Filename: filename,
+		Body:     body,
 	}
 }
 
@@ -223,10 +224,7 @@ func Open(filename string) (*FileForm, error) {
 		return nil, err
 	}
 
-	return &FileForm{
-		Filename: filename,
-		Body:     file,
-	}, nil
+	return NewFileForm(filename, file), nil
 }
 
 // MustOpen opens the named file and returns a *FileForm instance whose Filename is filename.

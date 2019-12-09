@@ -437,12 +437,15 @@ func TestWithMultipart(t *testing.T) {
 		"file1": sreq.
 			MustOpen("./testdata/testfile1.txt"),
 		"file2": sreq.
-			MustOpen("./testdata/testfile2.txt"),
+			MustOpen("./testdata/testfile2.txt").
+			SetFilename("testfile2.txt"),
 		"file3": sreq.
-			NewFileForm(bytes.NewReader([]byte("<p>This is a text file from memory</p>"))).
-			SetFilename("testfile3.txt").
+			NewFileForm("testfile3.txt",
+				bytes.NewReader([]byte("<p>This is a text file from memory</p>"))).
 			SetMIME("text/html; charset=utf-8"),
-		"keyword": sreq.NewFileForm(strings.NewReader("Filename not specified, consider as a origin form")),
+		"keyword": &sreq.FileForm{
+			Body: strings.NewReader("Filename not specified, consider as a origin form"),
+		},
 	}
 
 	stringArray := []string{"10086", "10010", "10000"}
