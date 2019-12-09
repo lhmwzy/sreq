@@ -50,10 +50,10 @@ type (
 	// Request wraps the raw HTTP request.
 	Request struct {
 		RawRequest *http.Request
-		Timeout    time.Duration
 		Err        error
 
-		retry *retry
+		timeout time.Duration
+		retry   *retry
 	}
 
 	// RequestOption specifies a request options, like params, form, etc.
@@ -503,7 +503,7 @@ func (req *Request) SetTimeout(timeout time.Duration) *Request {
 		return req
 	}
 
-	req.Timeout = timeout
+	req.timeout = timeout
 	return req
 }
 

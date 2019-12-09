@@ -21,22 +21,22 @@ const (
 )
 
 var (
-	// DefaultClient is the default sreq Client.
+	// DefaultClient is the default sreq Client,
+	// used for the global functions such as Get, Post, etc.
 	DefaultClient = New()
 )
 
 type (
 	// Client wraps the raw HTTP client.
 	// Do not modify the client across Goroutines!
-	// You should reuse it once initialized.
+	// You should reuse it as possible after initialized.
 	Client struct {
 		RawClient *http.Client
 		Err       error
 
-		retry *retry
-
 		requestInterceptors  []RequestInterceptor
 		responseInterceptors []ResponseInterceptor
+		retry                *retry
 	}
 )
 
@@ -554,8 +554,8 @@ func (c *Client) onAfterResponse(resp *Response) {
 func (c *Client) doWithRetry(req *Request, resp *Response) {
 	ctx := req.RawRequest.Context()
 	var cancel context.CancelFunc
-	if req.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, req.Timeout)
+	if req.timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, req.timeout)
 		req.RawRequest = req.RawRequest.WithContext(ctx)
 		defer cancel()
 	}
