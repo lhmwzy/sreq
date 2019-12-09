@@ -127,10 +127,12 @@ func (h Headers) Del(key string) {
 }
 
 func addHeadersPair(sb *strings.Builder, k string, v string) {
+	if sb.Len() > 0 {
+		sb.WriteString("\r\n")
+	}
 	sb.WriteString(http.CanonicalHeaderKey(k))
 	sb.WriteString(": ")
 	sb.WriteString(v)
-	sb.WriteString("\r\n")
 }
 
 // String returns the text representation of h.

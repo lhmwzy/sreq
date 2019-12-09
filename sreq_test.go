@@ -105,7 +105,7 @@ func TestHeaders(t *testing.T) {
 	}
 	want := "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\n" +
 		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\n" +
-		"String-Int-Array: 10086\r\nString-Int-Array: 10010\r\n"
+		"String-Int-Array: 10086\r\nString-Int-Array: 10010"
 	if got := h.String(); got != want {
 		t.Errorf("Headers_String got: %s, want: %s", got, want)
 	}
