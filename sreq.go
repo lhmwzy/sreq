@@ -14,7 +14,7 @@ import (
 
 const (
 	// Version of sreq.
-	Version = "0.3.7"
+	Version = "0.5.0"
 
 	defaultUserAgent = "go-sreq/" + Version
 )
@@ -24,22 +24,26 @@ var (
 )
 
 type (
-	// Values is the same as map[string]interface{}, used for query params and form.
+	// Values maps a string key to an interface{} type value,
+	// support string, int, []string, []int or []interface{} only with string and int.
+	// Used for query parameters and form values.
 	Values map[string]interface{}
 
-	// Params is an alias of Values.
+	// Params is an alias of Values, used for for query parameters.
 	Params = Values
 
-	// Form is an alias of Values.
+	// Form is an alias of Values, used for form values.
 	Form = Values
 
-	// Headers is the same as map[string]interface{}, used for request headers.
+	// Headers maps a string key to an interface{} type value,
+	// support string, int, []string, []int or []interface{} only with string and int.
+	// Used for headers.
 	Headers map[string]interface{}
 
-	// JSON is the same as map[string]interface{}, used for JSON payload.
+	// JSON maps a string key to an interface{} type value, used for JSON payload.
 	JSON map[string]interface{}
 
-	// Files specifies files of multipart payload.
+	// Files maps a string key to a *FileForm type value, used for files of multipart payload.
 	Files map[string]*FileForm
 
 	// FileForm specifies a file form.
@@ -70,17 +74,17 @@ func releaseBuffer(buf *bytes.Buffer) {
 	}
 }
 
-// Get returns the value related to the given key from a map.
+// Get gets the value associated with the given key.
 func (v Values) Get(key string) interface{} {
 	return v[key]
 }
 
-// Set sets a kv pair into a map.
+// Set sets the key to value. It replaces any existing values.
 func (v Values) Set(key string, value interface{}) {
 	v[key] = value
 }
 
-// Del deletes the value related to the given key from a map.
+// Del deletes the values associated with key.
 func (v Values) Del(key string) {
 	delete(v, key)
 }
@@ -149,17 +153,17 @@ func (v Values) String() string {
 	return v.Encode()
 }
 
-// Get returns the value related to the given key from a map.
+// Get gets the value associated with the given key.
 func (h Headers) Get(key string) interface{} {
 	return h[key]
 }
 
-// Set sets a kv pair into a map.
+// Set sets the key to value. It replaces any existing values.
 func (h Headers) Set(key string, value interface{}) {
 	h[key] = value
 }
 
-// Del deletes the value related to the given key from a map.
+// Del deletes the values associated with key.
 func (h Headers) Del(key string) {
 	delete(h, key)
 }
@@ -169,17 +173,17 @@ func (h Headers) String() string {
 	return toJSON(h)
 }
 
-// Get returns the value related to the given key from a map.
+// Get gets the value associated with the given key.
 func (j JSON) Get(key string) interface{} {
 	return j[key]
 }
 
-// Set sets a kv pair into a map.
+// Set sets the key to value. It replaces any existing values.
 func (j JSON) Set(key string, value interface{}) {
 	j[key] = value
 }
 
-// Del deletes the value related to the given key from a map.
+// Del deletes the values associated with key.
 func (j JSON) Del(key string) {
 	delete(j, key)
 }
@@ -194,12 +198,12 @@ func (f Files) Get(key string) *FileForm {
 	return f[key]
 }
 
-// Set sets a kv pair into a map.
+// Set sets the key to value. It replaces any existing values.
 func (f Files) Set(key string, value *FileForm) {
 	f[key] = value
 }
 
-// Del deletes the value related to the given key from a map.
+// Del deletes the values associated with key.
 func (f Files) Del(key string) {
 	delete(f, key)
 }

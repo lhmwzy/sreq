@@ -112,7 +112,7 @@ func (resp *Response) EnsureStatus2xx() *Response {
 	}
 
 	if resp.RawResponse.StatusCode/100 != 2 {
-		resp.Err = fmt.Errorf("bad status: %d", resp.RawResponse.StatusCode)
+		resp.Err = fmt.Errorf("sreq: bad status: %d", resp.RawResponse.StatusCode)
 	}
 	return resp
 }
@@ -124,7 +124,7 @@ func (resp *Response) EnsureStatus(code int) *Response {
 	}
 
 	if resp.RawResponse.StatusCode != code {
-		resp.Err = fmt.Errorf("bad status: %d", resp.RawResponse.StatusCode)
+		resp.Err = fmt.Errorf("sreq: bad status: %d", resp.RawResponse.StatusCode)
 	}
 	return resp
 }
