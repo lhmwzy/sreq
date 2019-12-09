@@ -91,18 +91,19 @@ func (v Values) Del(key string) {
 	delete(v, key)
 }
 
+func addValuePair(sb *strings.Builder, k string, v string) {
+	if sb.Len() > 0 {
+		sb.WriteString("&")
+	}
+	sb.WriteString(k)
+	sb.WriteString("=")
+	sb.WriteString(v)
+}
+
 // Encode encodes v into URL-unescaped form sorted by key.
 func (v Values) Encode() string {
 	var sb strings.Builder
-	callback := func(sb *strings.Builder, k string, v string) {
-		if sb.Len() > 0 {
-			sb.WriteString("&")
-		}
-		sb.WriteString(k)
-		sb.WriteString("=")
-		sb.WriteString(v)
-	}
-	return output(&sb, v, callback)
+	return output(&sb, v, addValuePair)
 }
 
 // String returns the text representation of v.
@@ -125,16 +126,17 @@ func (h Headers) Del(key string) {
 	delete(h, key)
 }
 
+func addHeadersPair(sb *strings.Builder, k string, v string) {
+	sb.WriteString(http.CanonicalHeaderKey(k))
+	sb.WriteString(": ")
+	sb.WriteString(v)
+	sb.WriteString("\r\n")
+}
+
 // String returns the text representation of h.
 func (h Headers) String() string {
 	var sb strings.Builder
-	callback := func(sb *strings.Builder, k string, v string) {
-		sb.WriteString(http.CanonicalHeaderKey(k))
-		sb.WriteString(": ")
-		sb.WriteString(v)
-		sb.WriteString("\r\n")
-	}
-	return output(&sb, h, callback)
+	return output(&sb, h, addHeadersPair)
 }
 
 // Get gets the value associated with the given key.
