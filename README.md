@@ -24,6 +24,9 @@
 
 ```sh
 go get -u github.com/winterssy/sreq
+
+# Go Modules only
+go get -u github.com/winterssy/sreq@master
 ```
 
 ## Usage
