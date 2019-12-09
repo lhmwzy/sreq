@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
@@ -227,18 +228,49 @@ func (ff *FileForm) SetMIME(mime string) *FileForm {
 	return ff
 }
 
-// MustOpen opens the named file and returns a *FileForm instance whose Filename is filename.
-// If there is an error, it will panic.
-func MustOpen(filename string) *FileForm {
+// Read implements Reader interface.
+func (ff *FileForm) Read(p []byte) (n int, err error) {
+	if ff.Body == nil {
+		return 0, io.EOF
+	}
+	return ff.Body.Read(p)
+}
+
+// Close implements Closer interface.
+func (ff *FileForm) Close() error {
+	if ff.Body == nil {
+		return nil
+	}
+
+	rc, ok := ff.Body.(io.ReadCloser)
+	if !ok {
+		rc = ioutil.NopCloser(ff.Body)
+	}
+	return rc.Close()
+}
+
+// Open opens the named file and returns a *FileForm instance whose Filename is filename.
+func Open(filename string) (*FileForm, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &FileForm{
 		Filename: filename,
 		Body:     file,
+	}, nil
+}
+
+// MustOpen opens the named file and returns a *FileForm instance whose Filename is filename.
+// If there is an error, it will panic.
+func MustOpen(filename string) *FileForm {
+	ff, err := Open(filename)
+	if err != nil {
+		panic(err)
 	}
+
+	return ff
 }
 
 func toJSON(data interface{}) string {

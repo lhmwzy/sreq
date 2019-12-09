@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"reflect"
@@ -154,5 +155,37 @@ func TestFiles(t *testing.T) {
 	f.Del("file2")
 	if f.Get("file2") != nil || len(f) != 1 {
 		t.Error("Files_Del test failed")
+	}
+}
+
+func TestOpen(t *testing.T) {
+	const (
+		fileExist    = "./testdata/testfile1.txt"
+		fileNotExist = "./testdata/file_not_exist.txt"
+	)
+
+	ff, err := sreq.Open(fileExist)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = ff.Close(); err != nil {
+		t.Error(err)
+	}
+
+	_, err = sreq.Open(fileNotExist)
+	if err == nil {
+		t.Error("Open test failed")
+	}
+
+	ff = &sreq.FileForm{
+		Body: nil,
+	}
+	_, err = ioutil.ReadAll(ff)
+	if err != nil {
+		t.Error(err)
+	}
+	err = ff.Close()
+	if err != nil {
+		t.Error(err)
 	}
 }

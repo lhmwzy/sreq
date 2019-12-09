@@ -360,7 +360,7 @@ func setFiles(mw *multipart.Writer, files Files) error {
 		filename := v.Filename
 		cType := v.MIME
 
-		r := bufio.NewReader(v.Body)
+		r := bufio.NewReader(v)
 		if cType == "" {
 			data, _ := r.Peek(512)
 			cType = http.DetectContentType(data)
@@ -384,9 +384,8 @@ func setFiles(mw *multipart.Writer, files Files) error {
 		if err != nil {
 			return err
 		}
-		if c, ok := v.Body.(io.Closer); ok {
-			c.Close()
-		}
+
+		v.Close()
 	}
 
 	return nil
