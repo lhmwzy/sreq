@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -90,63 +91,18 @@ func (v Values) Del(key string) {
 	delete(v, key)
 }
 
-func addPair(sb *strings.Builder, k string, v string) {
-	if sb.Len() > 0 {
-		sb.WriteString("&")
-	}
-	sb.WriteString(k)
-	sb.WriteString("=")
-	sb.WriteString(v)
-}
-
-func setStringArray(sb *strings.Builder, k string, v []string) {
-	for _, vs := range v {
-		addPair(sb, k, vs)
-	}
-}
-
-func setIntArray(sb *strings.Builder, k string, v []int) {
-	for _, vs := range v {
-		addPair(sb, k, strconv.Itoa(vs))
-	}
-}
-
-func setStringIntArray(sb *strings.Builder, k string, v []interface{}) {
-	for _, vs := range v {
-		switch vs := vs.(type) {
-		case string:
-			addPair(sb, k, vs)
-		case int:
-			addPair(sb, k, strconv.Itoa(vs))
-		}
-	}
-}
-
 // Encode encodes v into URL-unescaped form sorted by key.
 func (v Values) Encode() string {
-	keys := make([]string, 0, len(v))
-	for k := range v {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
 	var sb strings.Builder
-	for _, k := range keys {
-		switch v := v[k].(type) {
-		case string:
-			addPair(&sb, k, v)
-		case int:
-			addPair(&sb, k, strconv.Itoa(v))
-		case []string:
-			setStringArray(&sb, k, v)
-		case []int:
-			setIntArray(&sb, k, v)
-		case []interface{}:
-			setStringIntArray(&sb, k, v)
+	callback := func(sb *strings.Builder, k string, v string) {
+		if sb.Len() > 0 {
+			sb.WriteString("&")
 		}
+		sb.WriteString(k)
+		sb.WriteString("=")
+		sb.WriteString(v)
 	}
-
-	return sb.String()
+	return output(&sb, v, callback)
 }
 
 // String returns the text representation of v.
@@ -169,9 +125,16 @@ func (h Headers) Del(key string) {
 	delete(h, key)
 }
 
-// String returns the JSON-encoded text representation of h.
+// String returns the text representation of h.
 func (h Headers) String() string {
-	return toJSON(h)
+	var sb strings.Builder
+	callback := func(sb *strings.Builder, k string, v string) {
+		sb.WriteString(http.CanonicalHeaderKey(k))
+		sb.WriteString(": ")
+		sb.WriteString(v)
+		sb.WriteString("\r\n")
+	}
+	return output(&sb, h, callback)
 }
 
 // Get gets the value associated with the given key.
@@ -271,6 +234,58 @@ func MustOpen(filename string) *FileForm {
 	}
 
 	return ff
+}
+
+func output(sb *strings.Builder, v map[string]interface{},
+	callback func(*strings.Builder, string, string)) string {
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		switch v := v[k].(type) {
+		case string:
+			callback(sb, k, v)
+		case int:
+			callback(sb, k, strconv.Itoa(v))
+		case []string:
+			addStringArray(sb, k, v, callback)
+		case []int:
+			addIntArray(sb, k, v, callback)
+		case []interface{}:
+			addStringIntArray(sb, k, v, callback)
+		}
+	}
+
+	return sb.String()
+}
+
+func addStringArray(sb *strings.Builder, k string, v []string,
+	callback func(*strings.Builder, string, string)) {
+	for _, vs := range v {
+		callback(sb, k, vs)
+	}
+}
+
+func addIntArray(sb *strings.Builder, k string, v []int,
+	callback func(*strings.Builder, string, string)) {
+	for _, vs := range v {
+		callback(sb, k, strconv.Itoa(vs))
+	}
+}
+
+func addStringIntArray(sb *strings.Builder, k string, v []interface{},
+	callback func(*strings.Builder, string, string)) {
+	for _, vs := range v {
+		switch vs := vs.(type) {
+		case string:
+			callback(sb, k, vs)
+		case int:
+			callback(sb, k, strconv.Itoa(vs))
+		}
+	}
 }
 
 func toJSON(data interface{}) string {
