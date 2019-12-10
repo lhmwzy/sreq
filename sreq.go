@@ -58,6 +58,14 @@ type (
 		MIME     string
 	}
 
+	// KV is the interface that defines a data type used by sreq in many cases.
+	// The Keys method should return a slice of keys from a map.
+	// The Get method should return a slice of values typed string associated with the given key.
+	KV interface {
+		Keys() []string
+		Get(key string) []string
+	}
+
 	retry struct {
 		attempts   int
 		delay      time.Duration
@@ -76,9 +84,13 @@ func releaseBuffer(buf *bytes.Buffer) {
 	}
 }
 
-// Get gets the value associated with the given key.
-func (v Values) Get(key string) interface{} {
-	return v[key]
+// Get gets the value associated with the given key, ignore unsupported data type.
+func (v Values) Get(key string) []string {
+	if v == nil {
+		return nil
+	}
+
+	return filter(v[key])
 }
 
 // Set sets the key to value. It replaces any existing values.
@@ -91,19 +103,20 @@ func (v Values) Del(key string) {
 	delete(v, key)
 }
 
-func addValuePair(sb *strings.Builder, k string, v string) {
-	if sb.Len() > 0 {
-		sb.WriteString("&")
+// Keys returns the keys of v.
+func (v Values) Keys() []string {
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
 	}
-	sb.WriteString(k)
-	sb.WriteString("=")
-	sb.WriteString(v)
+	return keys
 }
 
 // Encode encodes v into URL-unescaped form sorted by key.
 func (v Values) Encode() string {
 	var sb strings.Builder
-	return output(&sb, v, addValuePair)
+	write(&sb, v, writeValues)
+	return sb.String()
 }
 
 // String returns the text representation of v.
@@ -111,9 +124,13 @@ func (v Values) String() string {
 	return v.Encode()
 }
 
-// Get gets the value associated with the given key.
-func (h Headers) Get(key string) interface{} {
-	return h[key]
+// Get gets the value associated with the given key, ignore unsupported data type.
+func (h Headers) Get(key string) []string {
+	if h == nil {
+		return nil
+	}
+
+	return filter(h[key])
 }
 
 // Set sets the key to value. It replaces any existing values.
@@ -126,19 +143,20 @@ func (h Headers) Del(key string) {
 	delete(h, key)
 }
 
-func addHeadersPair(sb *strings.Builder, k string, v string) {
-	if sb.Len() > 0 {
-		sb.WriteString("\r\n")
+// Keys returns the keys of h.
+func (h Headers) Keys() []string {
+	keys := make([]string, 0, len(h))
+	for k := range h {
+		keys = append(keys, k)
 	}
-	sb.WriteString(http.CanonicalHeaderKey(k))
-	sb.WriteString(": ")
-	sb.WriteString(v)
+	return keys
 }
 
 // String returns the text representation of h.
 func (h Headers) String() string {
 	var sb strings.Builder
-	return output(&sb, h, addHeadersPair)
+	write(&sb, h, writeHeaders)
+	return sb.String()
 }
 
 // Get gets the value associated with the given key.
@@ -238,55 +256,73 @@ func MustOpen(filename string) *FileForm {
 	return ff
 }
 
-func output(sb *strings.Builder, v map[string]interface{},
-	callback func(*strings.Builder, string, string)) string {
-	keys := make([]string, 0, len(v))
-	for k := range v {
-		keys = append(keys, k)
+func convertIntArray(v []int) []string {
+	vs := make([]string, len(v))
+	for i, vv := range v {
+		vs[i] = strconv.Itoa(vv)
 	}
+	return vs
+}
+
+func convertStringIntArray(v []interface{}) []string {
+	vs := make([]string, len(v))
+	for i, vv := range v {
+		switch vv := vv.(type) {
+		case string:
+			vs[i] = vv
+		case int:
+			vs[i] = strconv.Itoa(vv)
+		}
+	}
+	return vs
+}
+
+func filter(v interface{}) []string {
+	switch v := v.(type) {
+	case string:
+		return []string{v}
+	case int:
+		return []string{strconv.Itoa(v)}
+	case []string:
+		return v
+	case []int:
+		return convertIntArray(v)
+	case []interface{}:
+		return convertStringIntArray(v)
+	default:
+		return nil
+	}
+}
+
+func writeValues(sb *strings.Builder, k string, v []string) {
+	for _, vs := range v {
+		if sb.Len() > 0 {
+			sb.WriteString("&")
+		}
+		sb.WriteString(k)
+		sb.WriteString("=")
+		sb.WriteString(vs)
+	}
+}
+
+func writeHeaders(sb *strings.Builder, k string, v []string) {
+	for _, vs := range v {
+		if sb.Len() > 0 {
+			sb.WriteString("\r\n")
+		}
+		sb.WriteString(http.CanonicalHeaderKey(k))
+		sb.WriteString(": ")
+		sb.WriteString(vs)
+	}
+}
+
+func write(sb *strings.Builder, v KV,
+	callback func(sb *strings.Builder, k string, v []string)) {
+	keys := v.Keys()
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		switch v := v[k].(type) {
-		case string:
-			callback(sb, k, v)
-		case int:
-			callback(sb, k, strconv.Itoa(v))
-		case []string:
-			addStringArray(sb, k, v, callback)
-		case []int:
-			addIntArray(sb, k, v, callback)
-		case []interface{}:
-			addStringIntArray(sb, k, v, callback)
-		}
-	}
-
-	return sb.String()
-}
-
-func addStringArray(sb *strings.Builder, k string, v []string,
-	callback func(*strings.Builder, string, string)) {
-	for _, vs := range v {
-		callback(sb, k, vs)
-	}
-}
-
-func addIntArray(sb *strings.Builder, k string, v []int,
-	callback func(*strings.Builder, string, string)) {
-	for _, vs := range v {
-		callback(sb, k, strconv.Itoa(vs))
-	}
-}
-
-func addStringIntArray(sb *strings.Builder, k string, v []interface{},
-	callback func(*strings.Builder, string, string)) {
-	for _, vs := range v {
-		switch vs := vs.(type) {
-		case string:
-			callback(sb, k, vs)
-		case int:
-			callback(sb, k, strconv.Itoa(vs))
-		}
+		callback(sb, k, v.Get(k))
 	}
 }
 

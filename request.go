@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/textproto"
 	stdurl "net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -159,34 +158,14 @@ func (req *Request) SetHost(host string) *Request {
 }
 
 // SetHeaders sets headers for the HTTP request.
-func (req *Request) SetHeaders(headers Headers) *Request {
+func (req *Request) SetHeaders(headers KV) *Request {
 	if req.Err != nil {
 		return req
 	}
 
-	for k, v := range headers {
-		switch v := v.(type) {
-		case string:
-			req.RawRequest.Header.Set(k, v)
-		case int:
-			req.RawRequest.Header.Set(k, strconv.Itoa(v))
-		case []string:
-			for _, vv := range v {
-				req.RawRequest.Header.Add(k, vv)
-			}
-		case []int:
-			for _, vv := range v {
-				req.RawRequest.Header.Add(k, strconv.Itoa(vv))
-			}
-		case []interface{}:
-			for _, vv := range v {
-				switch vv := vv.(type) {
-				case string:
-					req.RawRequest.Header.Add(k, vv)
-				case int:
-					req.RawRequest.Header.Add(k, strconv.Itoa(vv))
-				}
-			}
+	for _, k := range headers.Keys() {
+		for _, v := range headers.Get(k) {
+			req.RawRequest.Header.Add(k, v)
 		}
 	}
 
@@ -224,35 +203,15 @@ func (req *Request) SetReferer(referer string) *Request {
 }
 
 // SetQuery sets query params for the HTTP request.
-func (req *Request) SetQuery(params Params) *Request {
+func (req *Request) SetQuery(params KV) *Request {
 	if req.Err != nil {
 		return req
 	}
 
 	query := req.RawRequest.URL.Query()
-	for k, v := range params {
-		switch v := v.(type) {
-		case int:
-			query.Set(k, strconv.Itoa(v))
-		case string:
-			query.Set(k, v)
-		case []string:
-			for _, vv := range v {
-				query.Add(k, vv)
-			}
-		case []int:
-			for _, vv := range v {
-				query.Add(k, strconv.Itoa(vv))
-			}
-		case []interface{}:
-			for _, vv := range v {
-				switch vv := vv.(type) {
-				case string:
-					query.Add(k, vv)
-				case int:
-					query.Add(k, strconv.Itoa(vv))
-				}
-			}
+	for _, k := range params.Keys() {
+		for _, v := range params.Get(k) {
+			query.Add(k, v)
 		}
 	}
 
@@ -284,35 +243,16 @@ func (req *Request) SetText(text string) *Request {
 }
 
 // SetForm sets form payload for the HTTP request.
-func (req *Request) SetForm(form Form) *Request {
+func (req *Request) SetForm(form KV) *Request {
 	if req.Err != nil {
 		return req
 	}
 
-	data := make(stdurl.Values, len(form))
-	for k, v := range form {
-		switch v := v.(type) {
-		case string:
-			data.Set(k, v)
-		case int:
-			data.Set(k, strconv.Itoa(v))
-		case []string:
-			for _, vv := range v {
-				data.Add(k, vv)
-			}
-		case []int:
-			for _, vv := range v {
-				data.Add(k, strconv.Itoa(vv))
-			}
-		case []interface{}:
-			for _, vv := range v {
-				switch vv := vv.(type) {
-				case string:
-					data.Add(k, vv)
-				case int:
-					data.Add(k, strconv.Itoa(vv))
-				}
-			}
+	keys := form.Keys()
+	data := make(stdurl.Values, len(keys))
+	for _, k := range keys {
+		for _, v := range form.Get(k) {
+			data.Add(k, v)
 		}
 	}
 
@@ -391,30 +331,10 @@ func setFiles(mw *multipart.Writer, files Files) error {
 	return nil
 }
 
-func setForm(mw *multipart.Writer, form Form) {
-	for k, v := range form {
-		switch v := v.(type) {
-		case string:
+func setForm(mw *multipart.Writer, form KV) {
+	for _, k := range form.Keys() {
+		for _, v := range form.Get(k) {
 			mw.WriteField(k, v)
-		case int:
-			mw.WriteField(k, strconv.Itoa(v))
-		case []string:
-			for _, vv := range v {
-				mw.WriteField(k, vv)
-			}
-		case []int:
-			for _, vv := range v {
-				mw.WriteField(k, strconv.Itoa(vv))
-			}
-		case []interface{}:
-			for _, vv := range v {
-				switch vv := vv.(type) {
-				case string:
-					mw.WriteField(k, vv)
-				case int:
-					mw.WriteField(k, strconv.Itoa(vv))
-				}
-			}
 		}
 	}
 }

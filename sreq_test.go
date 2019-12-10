@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -30,27 +31,31 @@ func printLocalDial(ctx context.Context, network, addr string) (net.Conn, error)
 }
 
 func TestValues(t *testing.T) {
-	v := make(sreq.Values)
-
-	v.Set("k1", "v1")
-	v.Set("k2", "v2")
-	v.Set("k3", "v3")
-	if v["k1"] != "v1" || v["k2"] != "v2" || v["k3"] != "v3" {
-		t.Fatal("Values_Set test failed")
-	}
-
-	if v.Get("k1") != "v1" || v.Get("k2") != "v2" || v.Get("k3") != "v3" {
+	var v sreq.Values
+	if v.Get("key") != nil {
 		t.Error("Values_Get test failed")
 	}
 
-	v.Del("k1")
-	if v["k1"] != nil || len(v) != 2 {
-		t.Error("Values_Del test failed")
+	v = make(sreq.Values)
+	stringArray := []string{"10086", "10010", "10000"}
+	v.Set("string", "2019")
+	v.Set("int", 2019)
+	v.Set("stringArray", stringArray)
+	v.Set("intArray", []int{10086, 10010, 10000})
+	v.Set("stringIntArray", []interface{}{"10086", 10010, 10000})
+	if len(v) != 5 {
+		t.Fatal("Values_Set test failed")
 	}
 
-	want := "k2=v2&k3=v3"
-	if got := v.String(); got != want {
-		t.Errorf("Values_String got: %s, want: %s", got, want)
+	if !reflect.DeepEqual(v.Get("stringArray"), stringArray) ||
+		!reflect.DeepEqual(v.Get("intArray"), stringArray) ||
+		!reflect.DeepEqual(v.Get("stringIntArray"), stringArray) {
+		t.Error("Values_Get test failed")
+	}
+
+	v.Del("string")
+	if len(v.Get("string")) != 0 || len(v) != 4 {
+		t.Error("Values_Del test failed")
 	}
 
 	v = sreq.Params{
@@ -58,7 +63,7 @@ func TestValues(t *testing.T) {
 		"offset": 0,
 		"limit":  100,
 	}
-	want = "limit=100&offset=0&q=Go语言"
+	want := "limit=100&offset=0&q=Go语言"
 	if got := v.Encode(); got != want {
 		t.Errorf("Values_Encode got: %s, want: %s", got, want)
 	}
@@ -73,26 +78,36 @@ func TestValues(t *testing.T) {
 	want = "int=2019&intArray=10086&intArray=10010&" +
 		"string=2019&stringArray=10086&stringArray=10010&" +
 		"stringIntArray=10086&stringIntArray=10010"
-	if got := v.Encode(); got != want {
+	if got := v.String(); got != want {
 		t.Errorf("Values_Encode got: %s, want: %s", got, want)
 	}
 }
 
 func TestHeaders(t *testing.T) {
-	h := make(sreq.Headers)
-
-	h.Set("k1", "v1")
-	h.Set("k2", "v2")
-	if h["k1"] != "v1" || h["k2"] != "v2" {
-		t.Fatal("Headers_Set test failed")
-	}
-
-	if h.Get("k1") != "v1" || h.Get("k2") != "v2" {
+	var h sreq.Headers
+	if h.Get("key") != nil {
 		t.Error("Headers_Get test failed")
 	}
 
-	h.Del("k1")
-	if h["k1"] != nil || len(h) != 1 {
+	h = make(sreq.Headers)
+	stringArray := []string{"10086", "10010", "10000"}
+	h.Set("string", "2019")
+	h.Set("int", 2019)
+	h.Set("stringArray", stringArray)
+	h.Set("intArray", []int{10086, 10010, 10000})
+	h.Set("stringIntArray", []interface{}{"10086", 10010, 10000})
+	if len(h) != 5 {
+		t.Fatal("Headers_Set test failed")
+	}
+
+	if !reflect.DeepEqual(h.Get("stringArray"), stringArray) ||
+		!reflect.DeepEqual(h.Get("intArray"), stringArray) ||
+		!reflect.DeepEqual(h.Get("stringIntArray"), stringArray) {
+		t.Error("Headers_Get test failed")
+	}
+
+	h.Del("string")
+	if len(h.Get("string")) != 0 || len(h) != 4 {
 		t.Error("Headers_Del test failed")
 	}
 
