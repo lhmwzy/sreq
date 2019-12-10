@@ -340,7 +340,7 @@ func setForm(mw *multipart.Writer, form KV) {
 }
 
 // SetMultipart sets multipart payload for the HTTP request.
-func (req *Request) SetMultipart(files Files, form Form) *Request {
+func (req *Request) SetMultipart(files Files, form KV) *Request {
 	if req.Err != nil {
 		return req
 	}
@@ -459,7 +459,7 @@ func WithHost(host string) RequestOption {
 }
 
 // WithHeaders sets headers for the HTTP request.
-func WithHeaders(headers Headers) RequestOption {
+func WithHeaders(headers KV) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetHeaders(headers)
 	}
@@ -487,7 +487,7 @@ func WithReferer(referer string) RequestOption {
 }
 
 // WithQuery sets query params for the HTTP request.
-func WithQuery(params Params) RequestOption {
+func WithQuery(params KV) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetQuery(params)
 	}
@@ -508,7 +508,7 @@ func WithText(text string) RequestOption {
 }
 
 // WithForm sets form payload for the HTTP request.
-func WithForm(form Form) RequestOption {
+func WithForm(form KV) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetForm(form)
 	}
@@ -522,7 +522,7 @@ func WithJSON(data JSON, escapeHTML bool) RequestOption {
 }
 
 // WithMultipart sets multipart payload for the HTTP request.
-func WithMultipart(files Files, form Form) RequestOption {
+func WithMultipart(files Files, form KV) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetMultipart(files, form)
 	}
