@@ -1,13 +1,17 @@
 package sreq_test
 
 import (
-	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/winterssy/sreq"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 const (
@@ -35,32 +39,45 @@ func TestResponse_Resolve(t *testing.T) {
 
 func TestResponse_Text(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case sreq.MethodPost:
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, "created")
+		var _w io.Writer
+		q := r.URL.Query().Get("e")
+		switch {
+		case strings.EqualFold(q, "UTF-8"):
+			_w = transform.NewWriter(w, unicode.UTF8.NewEncoder())
+		case strings.EqualFold(q, "GBK"):
+			_w = transform.NewWriter(w, simplifiedchinese.GBK.NewEncoder())
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			fmt.Fprint(w, "method not allowed")
+			w.WriteHeader(400)
+			return
 		}
+		_w.Write([]byte("你好世界"))
 	}))
 	defer ts.Close()
 
 	client := sreq.New()
+	want := "你好世界"
 	data, err := client.
-		Post(ts.URL).
+		Get(ts.URL,
+			sreq.WithQuery(sreq.Params{
+				"e": "utf-8",
+			}),
+		).
 		EnsureStatusOk().
 		Text()
-	if err != nil || data != "created" {
-		t.Error(err)
+	if err != nil || data != want {
+		t.Errorf("Response_Text got: %q, want: %q", data, want)
 	}
 
 	data, err = client.
-		Put(ts.URL).
+		Get(ts.URL,
+			sreq.WithQuery(sreq.Params{
+				"e": "gbk",
+			}),
+		).
 		EnsureStatus2xx().
-		Text()
-	if err == nil || data != "" {
-		t.Error("Response_Text test failed")
+		Text(simplifiedchinese.GBK)
+	if err != nil || data != want {
+		t.Errorf("Response_Text got: %q, want: %q", data, want)
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"golang.org/x/text/encoding"
 )
 
 type (
@@ -29,12 +31,8 @@ func (resp *Response) Raw() (*http.Response, error) {
 
 // Content decodes the HTTP response body to bytes.
 func (resp *Response) Content() ([]byte, error) {
-	if resp.Err != nil {
-		return nil, resp.Err
-	}
-
-	if resp.body != nil {
-		return resp.body, nil
+	if resp.Err != nil || resp.body != nil {
+		return resp.body, resp.Err
 	}
 	defer resp.RawResponse.Body.Close()
 
@@ -43,9 +41,15 @@ func (resp *Response) Content() ([]byte, error) {
 	return resp.body, err
 }
 
-// Text decodes the HTTP response body and returns the text representation of its raw data.
-func (resp *Response) Text() (string, error) {
+// Text decodes the HTTP response body and returns the text representation of its raw data
+// given an optional charset encoding.
+func (resp *Response) Text(e ...encoding.Encoding) (string, error) {
 	b, err := resp.Content()
+	if err != nil || len(e) == 0 {
+		return string(b), err
+	}
+
+	b, err = e[0].NewDecoder().Bytes(b)
 	return string(b), err
 }
 
