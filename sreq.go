@@ -59,7 +59,7 @@ type (
 	}
 
 	// KV is the interface that defines a data type used by sreq in many cases.
-	// The Keys method should return a slice of keys from a map.
+	// The Keys method should return a slice of keys typed string.
 	// The Get method should return a slice of values typed string associated with the given key.
 	KV interface {
 		Keys() []string
