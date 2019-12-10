@@ -127,8 +127,12 @@ func TestHeaders(t *testing.T) {
 }
 
 func TestJSON(t *testing.T) {
-	j := make(sreq.JSON)
+	var j sreq.JSON
+	if j.Get("key") != nil {
+		t.Error("JSON_Get test failed")
+	}
 
+	j = make(sreq.JSON)
 	j.Set("msg", "hello world")
 	j.Set("num", 2019)
 	if j["msg"] != "hello world" || j["num"] != 2019 {
@@ -151,8 +155,12 @@ func TestJSON(t *testing.T) {
 }
 
 func TestFiles(t *testing.T) {
-	f := make(sreq.Files)
+	var f sreq.Files
+	if f.Get("key") != nil {
+		t.Error("Files_Get test failed")
+	}
 
+	f = make(sreq.Files)
 	f.Set("file1", &sreq.FileForm{
 		Body: &os.File{},
 		MIME: "image/png",

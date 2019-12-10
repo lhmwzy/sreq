@@ -161,6 +161,10 @@ func (h Headers) String() string {
 
 // Get gets the value associated with the given key.
 func (j JSON) Get(key string) interface{} {
+	if j == nil {
+		return nil
+	}
+
 	return j[key]
 }
 
@@ -181,6 +185,10 @@ func (j JSON) String() string {
 
 // Get returns the value related to the given key from a map.
 func (f Files) Get(key string) *FileForm {
+	if f == nil {
+		return nil
+	}
+
 	return f[key]
 }
 
