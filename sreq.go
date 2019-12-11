@@ -16,7 +16,7 @@ import (
 
 const (
 	// Version of sreq.
-	Version = "0.5.0"
+	Version = "0.6.0"
 
 	defaultUserAgent = "go-sreq/" + Version
 )
@@ -26,6 +26,14 @@ var (
 )
 
 type (
+	// KV is the interface that defines a data type used by sreq in many cases.
+	// The Keys method should return a slice of keys typed string.
+	// The Get method should return a slice of values typed string associated with the given key.
+	KV interface {
+		Keys() []string
+		Get(key string) []string
+	}
+
 	// Values maps a string key to an interface{} type value,
 	// support string, int, []string, []int or []interface{} only with string and int.
 	// Used for query parameters and form values.
@@ -53,14 +61,6 @@ type (
 		Filename string
 		Body     io.Reader
 		MIME     string
-	}
-
-	// KV is the interface that defines a data type used by sreq in many cases.
-	// The Keys method should return a slice of keys typed string.
-	// The Get method should return a slice of values typed string associated with the given key.
-	KV interface {
-		Keys() []string
-		Get(key string) []string
 	}
 
 	retry struct {
