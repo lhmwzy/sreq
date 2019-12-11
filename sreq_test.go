@@ -14,6 +14,27 @@ import (
 	"github.com/winterssy/sreq"
 )
 
+var (
+	testStringArray = []string{"10086", "10010", "10000"}
+	testValues      = sreq.Values{
+		"string":         "2019",
+		"int":            2019,
+		"stringArray":    testStringArray,
+		"intArray":       []int{10086, 10010, 10000},
+		"stringIntArray": []interface{}{"10086", 10010, 10000},
+	}
+)
+
+type (
+	testStruct struct {
+		String         string   `json:"string"`
+		Int            string   `json:"int"`
+		StringArray    []string `json:"stringArray"`
+		IntArray       []string `json:"intArray"`
+		StringIntArray []string `json:"stringIntArray"`
+	}
+)
+
 // 用于测试 Client 是否复用连接
 func printLocalDial(ctx context.Context, network, addr string) (net.Conn, error) {
 	dial := net.Dialer{
@@ -68,16 +89,10 @@ func TestValues(t *testing.T) {
 		t.Errorf("Values_Encode got: %s, want: %s", got, want)
 	}
 
-	v = sreq.Params{
-		"string":         "2019",
-		"int":            2019,
-		"stringArray":    []string{"10086", "10010"},
-		"intArray":       []int{10086, 10010},
-		"stringIntArray": []interface{}{"10086", 10010},
-	}
-	want = "int=2019&intArray=10086&intArray=10010&" +
-		"string=2019&stringArray=10086&stringArray=10010&" +
-		"stringIntArray=10086&stringIntArray=10010"
+	v = testValues
+	want = "int=2019&intArray=10086&intArray=10010&intArray=10000&" +
+		"string=2019&stringArray=10086&stringArray=10010&stringArray=10000&" +
+		"stringIntArray=10086&stringIntArray=10010&stringIntArray=10000"
 	if got := v.String(); got != want {
 		t.Errorf("Values_Encode got: %s, want: %s", got, want)
 	}
