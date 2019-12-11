@@ -183,13 +183,13 @@ func NewFile(filename string, body io.Reader) *File {
 	}
 }
 
-// SetFilename sets Filename field value of ff.
+// SetFilename sets Filename field value of f.
 func (f *File) SetFilename(filename string) *File {
 	f.Filename = filename
 	return f
 }
 
-// SetMIME sets MIME field value of ff.
+// SetMIME sets MIME field value of f.
 func (f *File) SetMIME(mime string) *File {
 	f.MIME = mime
 	return f
@@ -229,12 +229,12 @@ func Open(filename string) (*File, error) {
 // MustOpen opens the named file and returns a *sreq.File instance whose Filename is filename.
 // If there is an error, it will panic.
 func MustOpen(filename string) *File {
-	ff, err := Open(filename)
+	file, err := Open(filename)
 	if err != nil {
 		panic(err)
 	}
 
-	return ff
+	return file
 }
 
 func convertIntArray(v []int) []string {
