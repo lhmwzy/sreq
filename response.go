@@ -2,6 +2,7 @@ package sreq
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -72,6 +73,27 @@ func (resp *Response) JSON(v interface{}) error {
 	}()
 
 	return json.NewDecoder(tee).Decode(v)
+}
+
+// XML decodes the HTTP response body and unmarshals its XML-encoded data into v.
+func (resp *Response) XML(v interface{}) error {
+	if resp.Err != nil {
+		return resp.Err
+	}
+
+	if resp.body != nil {
+		return xml.Unmarshal(resp.body, v)
+	}
+
+	buf := acquireBuffer()
+	tee := io.TeeReader(resp.RawResponse.Body, buf)
+	defer func() {
+		resp.RawResponse.Body.Close()
+		resp.body = buf.Bytes()
+		releaseBuffer(buf)
+	}()
+
+	return xml.NewDecoder(tee).Decode(v)
 }
 
 // Cookies returns the HTTP response cookies.

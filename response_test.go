@@ -1,6 +1,7 @@
 package sreq_test
 
 import (
+	"encoding/xml"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -90,6 +91,25 @@ func TestResponse_JSON(t *testing.T) {
 		JSON(&data)
 	if err == nil {
 		t.Error("Response_JSON test failed")
+	}
+}
+
+func TestResponse_XML(t *testing.T) {
+	type plant struct {
+		XMLName xml.Name `xml:"plant"`
+		Id      int      `xml:"id,attr"`
+		Name    string   `xml:"name"`
+		Origin  []string `xml:"origin"`
+	}
+
+	var data plant
+	client := sreq.New()
+	err := client.
+		Get("https://www.google.com/404").
+		EnsureStatusOk().
+		XML(&data)
+	if err == nil {
+		t.Error("Response_XML test failed")
 	}
 }
 

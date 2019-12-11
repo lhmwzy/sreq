@@ -3,6 +3,7 @@ package sreq_test
 import (
 	"bytes"
 	"context"
+	"encoding/xml"
 	"errors"
 	"io/ioutil"
 	"math"
@@ -53,6 +54,7 @@ func TestNewRequest(t *testing.T) {
 			"msg": "hi&hello",
 			"num": 2019,
 		}, true).
+		SetXML(nil).
 		SetMultipart(nil, nil).
 		SetBasicAuth("user", "pass").
 		SetBearerToken("sreq").
@@ -418,6 +420,70 @@ func TestWithJSON(t *testing.T) {
 
 	if resp.JSON.Msg != "hi&hello" || resp.JSON.Num != 2019 {
 		t.Error("WithJSON test failed")
+	}
+}
+
+func TestWithXML(t *testing.T) {
+	type plant struct {
+		XMLName xml.Name `xml:"plant"`
+		Id      int      `xml:"id,attr"`
+		Name    string   `xml:"name"`
+		Origin  []string `xml:"origin"`
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var data plant
+		err := xml.NewDecoder(r.Body).Decode(&data)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/xml")
+		xml.NewEncoder(w).Encode(data)
+	}))
+	defer ts.Close()
+
+	client := sreq.New()
+	_, err := client.
+		Post(ts.URL,
+			sreq.WithXML(make(map[string]interface{})),
+		).
+		EnsureStatusOk().
+		Raw()
+	if _, ok := err.(*sreq.RequestError); !ok {
+		t.Error("WithXML test failed")
+	}
+
+	origin := []string{"Ethiopia", "Brazil"}
+	coffee := &plant{
+		Id:     27,
+		Name:   "Coffee",
+		Origin: origin,
+	}
+
+	resp := client.
+		Post(ts.URL,
+			sreq.WithXML(coffee),
+		).
+		EnsureStatusOk()
+
+	result := new(plant)
+	err = resp.XML(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Id != 27 || result.Name != "Coffee" || !reflect.DeepEqual(result.Origin, origin) {
+		t.Error("Response_XML test failed")
+	}
+
+	_result := new(plant)
+	err = resp.XML(_result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _result.Id != 27 || _result.Name != "Coffee" || !reflect.DeepEqual(_result.Origin, origin) {
+		t.Error("Response_ReuseBody test failed")
 	}
 }
 

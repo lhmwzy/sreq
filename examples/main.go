@@ -94,7 +94,7 @@ func sendForm() {
 func sendJSON() {
 	data, err := sreq.
 		Post("http://httpbin.org/post",
-			sreq.WithJSON(sreq.JSON{
+			sreq.WithJSON(map[string]interface{}{
 				"msg": "hello world",
 				"num": 2019,
 			}, true),

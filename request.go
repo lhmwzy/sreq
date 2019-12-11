@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -263,7 +264,7 @@ func (req *Request) SetForm(form KV) *Request {
 	return req
 }
 
-// SetJSON sets json payload for the HTTP request.
+// SetJSON sets JSON payload for the HTTP request.
 func (req *Request) SetJSON(data interface{}, escapeHTML bool) *Request {
 	if req.Err != nil {
 		return req
@@ -278,6 +279,24 @@ func (req *Request) SetJSON(data interface{}, escapeHTML bool) *Request {
 	r := bytes.NewReader(b)
 	req.SetBody(r)
 	req.SetContentType("application/json")
+	return req
+}
+
+// SetXML sets XML payload for the HTTP request.
+func (req *Request) SetXML(data interface{}) *Request {
+	if req.Err != nil {
+		return req
+	}
+
+	b, err := xml.Marshal(data)
+	if err != nil {
+		req.raiseError("SetXML", err)
+		return req
+	}
+
+	r := bytes.NewReader(b)
+	req.SetBody(r)
+	req.SetContentType("application/xml")
 	return req
 }
 
@@ -521,10 +540,17 @@ func WithForm(form KV) RequestOption {
 	}
 }
 
-// WithJSON sets json payload for the HTTP request.
+// WithJSON sets JSON payload for the HTTP request.
 func WithJSON(data interface{}, escapeHTML bool) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetJSON(data, escapeHTML)
+	}
+}
+
+// WithXML sets XML payload for the HTTP request.
+func WithXML(data interface{}) RequestOption {
+	return func(req *Request) *Request {
+		return req.SetXML(data)
 	}
 }
 

@@ -425,9 +425,8 @@ func TestAutoGzip(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	// transport := &http.Transport{
-	// 	DialContext: printLocalDial,
-	// }
+	// transport := sreq.DefaultTransport()
+	// transport.DialContext = printLocalDial
 	// client := sreq.New().SetTransport(transport)
 	//
 	// for {
