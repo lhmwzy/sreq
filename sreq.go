@@ -50,7 +50,7 @@ type (
 
 	// FileForm specifies a file form.
 	// To upload a file you must specify its Filename field,
-	// otherwise sreq will consider it as a origin form, but not a file form.
+	// otherwise sreq will raise a *sreq.RequestError and then abort request.
 	// If you don't specify the MIME field, sreq will detect automatically using http.DetectContentType.
 	FileForm struct {
 		Filename string

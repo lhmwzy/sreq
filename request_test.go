@@ -428,18 +428,6 @@ func (e *errBody) Read(p []byte) (int, error) {
 }
 
 func TestWithMultipart(t *testing.T) {
-	type response struct {
-		Files map[string]string `json:"files"`
-		Form  struct {
-			Keyword        string   `json:"keyword"`
-			String         string   `json:"string"`
-			Int            string   `json:"int"`
-			StringArray    []string `json:"stringArray"`
-			IntArray       []string `json:"intArray"`
-			StringIntArray []string `json:"stringIntArray"`
-		} `json:"form"`
-	}
-
 	// For Charles
 	// client := sreq.New().SetProxyFromURL("http://127.0.0.1:7777")
 
@@ -448,6 +436,18 @@ func TestWithMultipart(t *testing.T) {
 		Post("http://httpbin.org/post",
 			sreq.WithMultipart(sreq.Files{
 				"file": sreq.NewFileForm("errorBody", &errBody{}),
+			}, nil)).
+		Raw()
+	if _, ok := err.(*sreq.RequestError); !ok {
+		t.Error("WithMultipart test failed")
+	}
+
+	_, err = client.
+		Post("http://httpbin.org/post",
+			sreq.WithMultipart(sreq.Files{
+				"file": &sreq.FileForm{
+					Body: strings.NewReader("Filename not specified, sreq will raise an error and abort request"),
+				},
 			}, nil)).
 		Raw()
 	if _, ok := err.(*sreq.RequestError); !ok {
@@ -464,9 +464,6 @@ func TestWithMultipart(t *testing.T) {
 			NewFileForm("testfile3.txt",
 				bytes.NewReader([]byte("<p>This is a text file from memory</p>"))).
 			SetMIME("text/html; charset=utf-8"),
-		"keyword": &sreq.FileForm{
-			Body: strings.NewReader("Filename not specified, consider as a origin form"),
-		},
 	}
 
 	stringArray := []string{"10086", "10010", "10000"}
@@ -476,6 +473,17 @@ func TestWithMultipart(t *testing.T) {
 		"stringArray":    stringArray,
 		"intArray":       []int{10086, 10010, 10000},
 		"stringIntArray": []interface{}{"10086", 10010, 10000},
+	}
+
+	type response struct {
+		Files map[string]string `json:"files"`
+		Form  struct {
+			String         string   `json:"string"`
+			Int            string   `json:"int"`
+			StringArray    []string `json:"stringArray"`
+			IntArray       []string `json:"intArray"`
+			StringIntArray []string `json:"stringIntArray"`
+		} `json:"form"`
 	}
 
 	resp := new(response)
@@ -491,7 +499,6 @@ func TestWithMultipart(t *testing.T) {
 
 	if resp.Files["file1"] != "testfile1.txt" || resp.Files["file2"] != "testfile2.txt" ||
 		resp.Files["file3"] != "<p>This is a text file from memory</p>" ||
-		resp.Form.Keyword != "Filename not specified, consider as a origin form" ||
 		resp.Form.Int != "2019" || resp.Form.String != "2019" ||
 		!reflect.DeepEqual(resp.Form.StringArray, stringArray) ||
 		!reflect.DeepEqual(resp.Form.IntArray, stringArray) ||

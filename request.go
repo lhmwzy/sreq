@@ -290,7 +290,6 @@ func escapeQuotes(s string) string {
 func setFiles(mw *multipart.Writer, files Files) error {
 	const (
 		fileFormat = `form-data; name="%s"; filename="%s"`
-		formFormat = `form-data; name="%s"`
 	)
 
 	var (
@@ -299,23 +298,21 @@ func setFiles(mw *multipart.Writer, files Files) error {
 	)
 	for k, v := range files {
 		filename := v.Filename
-		cType := v.MIME
+		if filename == "" {
+			return fmt.Errorf("filename of [%s] not specified", k)
+		}
 
 		r := bufio.NewReader(v)
+		cType := v.MIME
 		if cType == "" {
 			data, _ := r.Peek(512)
 			cType = http.DetectContentType(data)
 		}
 
 		h := make(textproto.MIMEHeader)
-		if filename != "" {
-			h.Set("Content-Disposition",
-				fmt.Sprintf(fileFormat, escapeQuotes(k), escapeQuotes(filename)))
-			h.Set("Content-Type", cType)
-		} else {
-			h.Set("Content-Disposition",
-				fmt.Sprintf(formFormat, escapeQuotes(k)))
-		}
+		h.Set("Content-Disposition",
+			fmt.Sprintf(fileFormat, escapeQuotes(k), escapeQuotes(filename)))
+		h.Set("Content-Type", cType)
 		part, err = mw.CreatePart(h)
 		if err != nil {
 			return err
@@ -346,9 +343,9 @@ func (req *Request) SetMultipart(files Files, form KV) *Request {
 		return req
 	}
 
-	if req.errBackground == nil {
-		req.errBackground = make(chan error, 1)
-	}
+	req.errBackground = make(chan error, 1)
+	ctx, cancel := context.WithCancel(req.RawRequest.Context())
+	req.RawRequest = req.RawRequest.WithContext(ctx)
 
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
@@ -362,6 +359,7 @@ func (req *Request) SetMultipart(files Files, form KV) *Request {
 				Cause: "SetMultipart",
 				Err:   err,
 			}
+			cancel()
 			return
 		}
 
