@@ -223,7 +223,7 @@ func (ff *FileForm) SetMIME(mime string) *FileForm {
 }
 
 // Read implements Reader interface.
-func (ff *FileForm) Read(p []byte) (n int, err error) {
+func (ff *FileForm) Read(p []byte) (int, error) {
 	if ff.Body == nil {
 		return 0, io.EOF
 	}

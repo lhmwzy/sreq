@@ -551,6 +551,10 @@ func (c *Client) onAfterResponse(resp *Response) {
 	}
 }
 
+var defaultRetry = &retry{
+	attempts: 1,
+}
+
 func (c *Client) doWithRetry(req *Request, resp *Response) {
 	ctx := req.RawRequest.Context()
 	var cancel context.CancelFunc
@@ -560,22 +564,21 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 		defer cancel()
 	}
 
-	if req.retry == nil && c.retry == nil {
-		resp.RawResponse, resp.Err = c.do(req.RawRequest)
-		return
-	}
-
-	retry := req.retry
-	if retry == nil {
+	retry := defaultRetry
+	if req.retry != nil {
+		retry = req.retry
+	} else if c.retry != nil {
 		retry = c.retry
 	}
 
 	var err error
-	for i := retry.attempts; i > 0; i-- {
+	for i := 0; i < retry.attempts; i++ {
 		resp.RawResponse, resp.Err = c.do(req.RawRequest)
-		if err = ctx.Err(); err != nil {
+		select {
+		case err = <-req.errBackground:
 			resp.Err = err
 			return
+		default:
 		}
 
 		shouldRetry := resp.Err != nil
@@ -586,7 +589,7 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 			}
 		}
 
-		if !shouldRetry {
+		if !shouldRetry || i == retry.attempts-1 {
 			return
 		}
 

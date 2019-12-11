@@ -51,8 +51,9 @@ type (
 		RawRequest *http.Request
 		Err        error
 
-		timeout time.Duration
-		retry   *retry
+		timeout       time.Duration
+		retry         *retry
+		errBackground chan error
 	}
 
 	// RequestOption specifies a request options, like params, form, etc.
@@ -345,6 +346,10 @@ func (req *Request) SetMultipart(files Files, form KV) *Request {
 		return req
 	}
 
+	if req.errBackground == nil {
+		req.errBackground = make(chan error, 1)
+	}
+
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
@@ -353,6 +358,10 @@ func (req *Request) SetMultipart(files Files, form KV) *Request {
 
 		err := setFiles(mw, files)
 		if err != nil {
+			req.errBackground <- &RequestError{
+				Cause: "SetMultipart",
+				Err:   err,
+			}
 			return
 		}
 

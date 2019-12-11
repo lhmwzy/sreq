@@ -3,6 +3,7 @@ package sreq_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -420,6 +421,12 @@ func TestWithJSON(t *testing.T) {
 	}
 }
 
+type errBody struct{}
+
+func (e *errBody) Read(p []byte) (int, error) {
+	return 0, errors.New("no body")
+}
+
 func TestWithMultipart(t *testing.T) {
 	type response struct {
 		Files map[string]string `json:"files"`
@@ -431,6 +438,20 @@ func TestWithMultipart(t *testing.T) {
 			IntArray       []string `json:"intArray"`
 			StringIntArray []string `json:"stringIntArray"`
 		} `json:"form"`
+	}
+
+	// For Charles
+	// client := sreq.New().SetProxyFromURL("http://127.0.0.1:7777")
+
+	client := sreq.New()
+	_, err := client.
+		Post("http://httpbin.org/post",
+			sreq.WithMultipart(sreq.Files{
+				"file": sreq.NewFileForm("errorBody", &errBody{}),
+			}, nil)).
+		Raw()
+	if _, ok := err.(*sreq.RequestError); !ok {
+		t.Error("WithMultipart test failed")
 	}
 
 	files := sreq.Files{
@@ -457,12 +478,8 @@ func TestWithMultipart(t *testing.T) {
 		"stringIntArray": []interface{}{"10086", 10010, 10000},
 	}
 
-	// For Charles
-	// client := sreq.New().SetProxyFromURL("http://127.0.0.1:7777")
-
-	client := sreq.New()
 	resp := new(response)
-	err := client.
+	err = client.
 		Post("http://httpbin.org/post",
 			sreq.WithMultipart(files, form),
 		).
