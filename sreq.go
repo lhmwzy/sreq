@@ -45,14 +45,14 @@ type (
 	// JSON maps a string key to an interface{} type value, used for JSON payload.
 	JSON map[string]interface{}
 
-	// Files maps a string key to a *FileForm type value, used for files of multipart payload.
-	Files map[string]*FileForm
+	// Files maps a string key to a *File type value, used for files of multipart payload.
+	Files map[string]*File
 
-	// FileForm specifies a file form.
+	// File specifies a file.
 	// To upload a file you must specify its Filename field,
 	// otherwise sreq will raise a *sreq.RequestError and then abort request.
 	// If you don't specify the MIME field, sreq will detect automatically using http.DetectContentType.
-	FileForm struct {
+	File struct {
 		Filename string
 		Body     io.Reader
 		MIME     string
@@ -184,7 +184,7 @@ func (j JSON) String() string {
 }
 
 // Get returns the value related to the given key from a map.
-func (f Files) Get(key string) *FileForm {
+func (f Files) Get(key string) *File {
 	if f == nil {
 		return nil
 	}
@@ -193,7 +193,7 @@ func (f Files) Get(key string) *FileForm {
 }
 
 // Set sets the key to value. It replaces any existing values.
-func (f Files) Set(key string, value *FileForm) {
+func (f Files) Set(key string, value *File) {
 	f[key] = value
 }
 
@@ -202,28 +202,28 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// NewFileForm returns a *FileForm instance given a filename and its body.
-func NewFileForm(filename string, body io.Reader) *FileForm {
-	return &FileForm{
+// NewFile returns a *File instance given a filename and its body.
+func NewFile(filename string, body io.Reader) *File {
+	return &File{
 		Filename: filename,
 		Body:     body,
 	}
 }
 
 // SetFilename sets Filename field value of ff.
-func (ff *FileForm) SetFilename(filename string) *FileForm {
+func (ff *File) SetFilename(filename string) *File {
 	ff.Filename = filename
 	return ff
 }
 
 // SetMIME sets MIME field value of ff.
-func (ff *FileForm) SetMIME(mime string) *FileForm {
+func (ff *File) SetMIME(mime string) *File {
 	ff.MIME = mime
 	return ff
 }
 
 // Read implements Reader interface.
-func (ff *FileForm) Read(p []byte) (int, error) {
+func (ff *File) Read(p []byte) (int, error) {
 	if ff.Body == nil {
 		return 0, io.EOF
 	}
@@ -231,7 +231,7 @@ func (ff *FileForm) Read(p []byte) (int, error) {
 }
 
 // Close implements Closer interface.
-func (ff *FileForm) Close() error {
+func (ff *File) Close() error {
 	if ff.Body == nil {
 		return nil
 	}
@@ -243,19 +243,19 @@ func (ff *FileForm) Close() error {
 	return rc.Close()
 }
 
-// Open opens the named file and returns a *FileForm instance whose Filename is filename.
-func Open(filename string) (*FileForm, error) {
+// Open opens the named file and returns a *File instance whose Filename is filename.
+func Open(filename string) (*File, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewFileForm(filename, file), nil
+	return NewFile(filename, file), nil
 }
 
-// MustOpen opens the named file and returns a *FileForm instance whose Filename is filename.
+// MustOpen opens the named file and returns a *File instance whose Filename is filename.
 // If there is an error, it will panic.
-func MustOpen(filename string) *FileForm {
+func MustOpen(filename string) *File {
 	ff, err := Open(filename)
 	if err != nil {
 		panic(err)

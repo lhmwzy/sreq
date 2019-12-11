@@ -435,7 +435,7 @@ func TestWithMultipart(t *testing.T) {
 	_, err := client.
 		Post("http://httpbin.org/post",
 			sreq.WithMultipart(sreq.Files{
-				"file": sreq.NewFileForm("errorBody", &errBody{}),
+				"file": sreq.NewFile("errorBody", &errBody{}),
 			}, nil)).
 		Raw()
 	if _, ok := err.(*sreq.RequestError); !ok {
@@ -445,7 +445,7 @@ func TestWithMultipart(t *testing.T) {
 	_, err = client.
 		Post("http://httpbin.org/post",
 			sreq.WithMultipart(sreq.Files{
-				"file": &sreq.FileForm{
+				"file": &sreq.File{
 					Body: strings.NewReader("Filename not specified, sreq will raise an error and abort request"),
 				},
 			}, nil)).
@@ -461,7 +461,7 @@ func TestWithMultipart(t *testing.T) {
 			MustOpen("./testdata/testfile2.txt").
 			SetFilename("testfile2.txt"),
 		"file3": sreq.
-			NewFileForm("testfile3.txt",
+			NewFile("testfile3.txt",
 				bytes.NewReader([]byte("<p>This is a text file from memory</p>"))).
 			SetMIME("text/html; charset=utf-8"),
 	}

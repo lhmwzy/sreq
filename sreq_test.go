@@ -161,11 +161,11 @@ func TestFiles(t *testing.T) {
 	}
 
 	f = make(sreq.Files)
-	f.Set("file1", &sreq.FileForm{
+	f.Set("file1", &sreq.File{
 		Body: &os.File{},
 		MIME: "image/png",
 	})
-	f.Set("file2", &sreq.FileForm{
+	f.Set("file2", &sreq.File{
 		Body: strings.NewReader("hello world"),
 		MIME: "text/plain",
 	})
@@ -204,7 +204,7 @@ func TestOpen(t *testing.T) {
 		t.Error("Open test failed")
 	}
 
-	ff = &sreq.FileForm{
+	ff = &sreq.File{
 		Body: nil,
 	}
 	_, err = ioutil.ReadAll(ff)
