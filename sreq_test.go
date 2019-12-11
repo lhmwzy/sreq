@@ -23,6 +23,13 @@ var (
 		"intArray":       []int{10086, 10010, 10000},
 		"stringIntArray": []interface{}{"10086", 10010, 10000},
 	}
+	testHeaders = sreq.Headers{
+		"string":           "2019",
+		"int":              2019,
+		"string-array":     testStringArray,
+		"int-array":        []int{10086, 10010, 10000},
+		"string-int-array": []interface{}{"10086", 10010, 10000},
+	}
 )
 
 type (
@@ -126,16 +133,10 @@ func TestHeaders(t *testing.T) {
 		t.Error("Headers_Del test failed")
 	}
 
-	h = sreq.Headers{
-		"string":           "2019",
-		"int":              2019,
-		"string-array":     []string{"10086", "10010"},
-		"int-array":        []int{10086, 10010},
-		"string-int-array": []interface{}{"10086", 10010},
-	}
-	want := "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\n" +
-		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\n" +
-		"String-Int-Array: 10086\r\nString-Int-Array: 10010"
+	h = testHeaders
+	want := "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\nInt-Array: 10000\r\n" +
+		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\nString-Array: 10000\r\n" +
+		"String-Int-Array: 10086\r\nString-Int-Array: 10010\r\nString-Int-Array: 10000"
 	if got := h.String(); got != want {
 		t.Errorf("Headers_String got: %s, want: %s", got, want)
 	}

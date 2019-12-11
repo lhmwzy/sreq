@@ -136,13 +136,7 @@ func TestWithHeaders(t *testing.T) {
 	resp := new(response)
 	err := client.
 		Get("http://httpbin.org/get",
-			sreq.WithHeaders(sreq.Headers{
-				"string":           "2019",
-				"int":              2019,
-				"string-array":     testStringArray,
-				"int-array":        []int{10086, 10010, 10000},
-				"string-int-array": []interface{}{"10086", 10010, 10000},
-			}),
+			sreq.WithHeaders(testHeaders),
 		).
 		EnsureStatusOk().
 		JSON(resp)
