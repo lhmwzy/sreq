@@ -264,7 +264,7 @@ func (req *Request) SetForm(form KV) *Request {
 }
 
 // SetJSON sets json payload for the HTTP request.
-func (req *Request) SetJSON(data JSON, escapeHTML bool) *Request {
+func (req *Request) SetJSON(data interface{}, escapeHTML bool) *Request {
 	if req.Err != nil {
 		return req
 	}
@@ -522,7 +522,7 @@ func WithForm(form KV) RequestOption {
 }
 
 // WithJSON sets json payload for the HTTP request.
-func WithJSON(data JSON, escapeHTML bool) RequestOption {
+func WithJSON(data interface{}, escapeHTML bool) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetJSON(data, escapeHTML)
 	}

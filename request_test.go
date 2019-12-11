@@ -49,7 +49,7 @@ func TestNewRequest(t *testing.T) {
 		SetForm(sreq.Form{
 			"k2": "v2",
 		}).
-		SetJSON(sreq.JSON{
+		SetJSON(map[string]interface{}{
 			"msg": "hi&hello",
 			"num": 2019,
 		}, true).
@@ -354,7 +354,7 @@ func TestWithJSON(t *testing.T) {
 	client := sreq.New()
 	err := client.
 		Post("http://httpbin.org/post",
-			sreq.WithJSON(sreq.JSON{
+			sreq.WithJSON(map[string]interface{}{
 				"num": math.Inf(1),
 			}, true),
 		).
@@ -366,7 +366,7 @@ func TestWithJSON(t *testing.T) {
 
 	err = client.
 		Post("http://httpbin.org/post",
-			sreq.WithJSON(sreq.JSON{
+			sreq.WithJSON(map[string]interface{}{
 				"msg": "hi&hello",
 				"num": 2019,
 			}, true),
@@ -387,7 +387,7 @@ func TestWithJSON(t *testing.T) {
 	resp := new(response)
 	err = client.
 		Post("http://httpbin.org/post",
-			sreq.WithJSON(sreq.JSON{
+			sreq.WithJSON(map[string]interface{}{
 				"msg": "hi&hello",
 				"num": 2019,
 			}, true),
@@ -405,7 +405,7 @@ func TestWithJSON(t *testing.T) {
 	_resp := new(response)
 	err = client.
 		Post("http://httpbin.org/post",
-			sreq.WithJSON(sreq.JSON{
+			sreq.WithJSON(map[string]interface{}{
 				"msg": "hi&hello",
 				"num": 2019,
 			}, false),

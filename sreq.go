@@ -42,9 +42,6 @@ type (
 	// Used for headers.
 	Headers map[string]interface{}
 
-	// JSON maps a string key to an interface{} type value, used for JSON payload.
-	JSON map[string]interface{}
-
 	// Files maps a string key to a *File type value, used for files of multipart payload.
 	Files map[string]*File
 
@@ -160,30 +157,6 @@ func (h Headers) String() string {
 }
 
 // Get gets the value associated with the given key.
-func (j JSON) Get(key string) interface{} {
-	if j == nil {
-		return nil
-	}
-
-	return j[key]
-}
-
-// Set sets the key to value. It replaces any existing values.
-func (j JSON) Set(key string, value interface{}) {
-	j[key] = value
-}
-
-// Del deletes the values associated with key.
-func (j JSON) Del(key string) {
-	delete(j, key)
-}
-
-// String returns the JSON-encoded text representation of j.
-func (j JSON) String() string {
-	return toJSON(j)
-}
-
-// Get returns the value related to the given key from a map.
 func (f Files) Get(key string) *File {
 	if f == nil {
 		return nil
@@ -202,7 +175,7 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// NewFile returns a *File instance given a filename and its body.
+// NewFile returns a *sreq.File instance given a filename and its body.
 func NewFile(filename string, body io.Reader) *File {
 	return &File{
 		Filename: filename,
@@ -211,39 +184,39 @@ func NewFile(filename string, body io.Reader) *File {
 }
 
 // SetFilename sets Filename field value of ff.
-func (ff *File) SetFilename(filename string) *File {
-	ff.Filename = filename
-	return ff
+func (f *File) SetFilename(filename string) *File {
+	f.Filename = filename
+	return f
 }
 
 // SetMIME sets MIME field value of ff.
-func (ff *File) SetMIME(mime string) *File {
-	ff.MIME = mime
-	return ff
+func (f *File) SetMIME(mime string) *File {
+	f.MIME = mime
+	return f
 }
 
 // Read implements Reader interface.
-func (ff *File) Read(p []byte) (int, error) {
-	if ff.Body == nil {
+func (f *File) Read(p []byte) (int, error) {
+	if f.Body == nil {
 		return 0, io.EOF
 	}
-	return ff.Body.Read(p)
+	return f.Body.Read(p)
 }
 
 // Close implements Closer interface.
-func (ff *File) Close() error {
-	if ff.Body == nil {
+func (f *File) Close() error {
+	if f.Body == nil {
 		return nil
 	}
 
-	rc, ok := ff.Body.(io.ReadCloser)
+	rc, ok := f.Body.(io.ReadCloser)
 	if !ok {
-		rc = ioutil.NopCloser(ff.Body)
+		rc = ioutil.NopCloser(f.Body)
 	}
 	return rc.Close()
 }
 
-// Open opens the named file and returns a *File instance whose Filename is filename.
+// Open opens the named file and returns a *sreq.File instance whose Filename is filename.
 func Open(filename string) (*File, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -253,7 +226,7 @@ func Open(filename string) (*File, error) {
 	return NewFile(filename, file), nil
 }
 
-// MustOpen opens the named file and returns a *File instance whose Filename is filename.
+// MustOpen opens the named file and returns a *sreq.File instance whose Filename is filename.
 // If there is an error, it will panic.
 func MustOpen(filename string) *File {
 	ff, err := Open(filename)
@@ -332,14 +305,6 @@ func write(sb *strings.Builder, v KV,
 	for _, k := range keys {
 		callback(sb, k, v.Get(k))
 	}
-}
-
-func toJSON(data interface{}) string {
-	b, err := jsonMarshal(data, "", "\t", false)
-	if err != nil {
-		return "{}"
-	}
-	return string(b)
 }
 
 func jsonMarshal(v interface{}, prefix string, indent string, escapeHTML bool) ([]byte, error) {

@@ -126,34 +126,6 @@ func TestHeaders(t *testing.T) {
 	}
 }
 
-func TestJSON(t *testing.T) {
-	var j sreq.JSON
-	if j.Get("key") != nil {
-		t.Error("JSON_Get test failed")
-	}
-
-	j = make(sreq.JSON)
-	j.Set("msg", "hello world")
-	j.Set("num", 2019)
-	if j["msg"] != "hello world" || j["num"] != 2019 {
-		t.Fatal("JSON_Set test failed")
-	}
-
-	if j.Get("msg") != "hello world" || j.Get("num") != 2019 {
-		t.Error("JSON_Get test failed")
-	}
-
-	j.Del("msg")
-	if j["msg"] != nil || len(j) != 1 {
-		t.Error("JSON_Del test failed")
-	}
-
-	want := "{\n\t\"num\": 2019\n}\n"
-	if got := j.String(); got != want {
-		t.Errorf("JSON_string got: %q, want: %q", got, want)
-	}
-}
-
 func TestFiles(t *testing.T) {
 	var f sreq.Files
 	if f.Get("key") != nil {

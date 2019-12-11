@@ -47,7 +47,7 @@ func TestResponse_Text(t *testing.T) {
 		case strings.EqualFold(q, "GBK"):
 			_w = transform.NewWriter(w, simplifiedchinese.GBK.NewEncoder())
 		default:
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		_w.Write([]byte("你好世界"))
@@ -249,9 +249,12 @@ func TestResponse_ReuseBody(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.Text()
+	data, err := r.Text()
 	if err != nil {
 		t.Error(err)
+	}
+	if data == "" {
+		t.Error("Response_ReuseBody test failed")
 	}
 
 	resp := new(response)
