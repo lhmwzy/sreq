@@ -387,7 +387,7 @@ func TestClient_FilterCookie(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := cookie.Value; got != "10086" {
-		t.Errorf("the cookie value expected to be: %s, but got: %s", "10086", got)
+		t.Errorf("the cookie value expected to be: %q, but got: %q", "10086", got)
 	}
 
 	_, err = client.FilterCookie("http://127.0.0.1:8080^", "uid")

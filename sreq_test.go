@@ -65,20 +65,26 @@ func TestValues(t *testing.T) {
 	}
 
 	v = make(sreq.Values)
-	stringArray := []string{"10086", "10010", "10000"}
 	v.Set("string", "2019")
 	v.Set("int", 2019)
-	v.Set("stringArray", stringArray)
+	v.Set("stringArray", testStringArray)
 	v.Set("intArray", []int{10086, 10010, 10000})
 	v.Set("stringIntArray", []interface{}{"10086", 10010, 10000})
 	if len(v) != 5 {
 		t.Fatal("Values_Set test failed")
 	}
 
-	if !reflect.DeepEqual(v.Get("stringArray"), stringArray) ||
-		!reflect.DeepEqual(v.Get("intArray"), stringArray) ||
-		!reflect.DeepEqual(v.Get("stringIntArray"), stringArray) {
+	if !reflect.DeepEqual(v.Get("stringArray"), testStringArray) ||
+		!reflect.DeepEqual(v.Get("intArray"), testStringArray) ||
+		!reflect.DeepEqual(v.Get("stringIntArray"), testStringArray) {
 		t.Error("Values_Get test failed")
+	}
+
+	want := "int=2019&intArray=10086&intArray=10010&intArray=10000&" +
+		"string=2019&stringArray=10086&stringArray=10010&stringArray=10000&" +
+		"stringIntArray=10086&stringIntArray=10010&stringIntArray=10000"
+	if got := v.String(); got != want {
+		t.Errorf("Values_String got: %q, want: %q", got, want)
 	}
 
 	v.Del("string")
@@ -86,22 +92,14 @@ func TestValues(t *testing.T) {
 		t.Error("Values_Del test failed")
 	}
 
-	v = sreq.Params{
+	v = sreq.Values{
 		"q":      "Go语言",
 		"offset": 0,
 		"limit":  100,
 	}
-	want := "limit=100&offset=0&q=Go语言"
+	want = "limit=100&offset=0&q=Go语言"
 	if got := v.Encode(); got != want {
-		t.Errorf("Values_Encode got: %s, want: %s", got, want)
-	}
-
-	v = testValues
-	want = "int=2019&intArray=10086&intArray=10010&intArray=10000&" +
-		"string=2019&stringArray=10086&stringArray=10010&stringArray=10000&" +
-		"stringIntArray=10086&stringIntArray=10010&stringIntArray=10000"
-	if got := v.String(); got != want {
-		t.Errorf("Values_Encode got: %s, want: %s", got, want)
+		t.Errorf("Values_Encode got: %q, want: %q", got, want)
 	}
 }
 
@@ -112,33 +110,31 @@ func TestHeaders(t *testing.T) {
 	}
 
 	h = make(sreq.Headers)
-	stringArray := []string{"10086", "10010", "10000"}
 	h.Set("string", "2019")
 	h.Set("int", 2019)
-	h.Set("stringArray", stringArray)
-	h.Set("intArray", []int{10086, 10010, 10000})
-	h.Set("stringIntArray", []interface{}{"10086", 10010, 10000})
+	h.Set("string-array", testStringArray)
+	h.Set("int-array", []int{10086, 10010, 10000})
+	h.Set("string-int-array", []interface{}{"10086", 10010, 10000})
 	if len(h) != 5 {
 		t.Fatal("Headers_Set test failed")
 	}
 
-	if !reflect.DeepEqual(h.Get("stringArray"), stringArray) ||
-		!reflect.DeepEqual(h.Get("intArray"), stringArray) ||
-		!reflect.DeepEqual(h.Get("stringIntArray"), stringArray) {
+	if !reflect.DeepEqual(h.Get("string-array"), testStringArray) ||
+		!reflect.DeepEqual(h.Get("int-array"), testStringArray) ||
+		!reflect.DeepEqual(h.Get("string-int-array"), testStringArray) {
 		t.Error("Headers_Get test failed")
+	}
+
+	want := "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\nInt-Array: 10000\r\n" +
+		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\nString-Array: 10000\r\n" +
+		"String-Int-Array: 10086\r\nString-Int-Array: 10010\r\nString-Int-Array: 10000"
+	if got := h.String(); got != want {
+		t.Errorf("Headers_String got: %q, want: %q", got, want)
 	}
 
 	h.Del("string")
 	if len(h.Get("string")) != 0 || len(h) != 4 {
 		t.Error("Headers_Del test failed")
-	}
-
-	h = testHeaders
-	want := "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\nInt-Array: 10000\r\n" +
-		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\nString-Array: 10000\r\n" +
-		"String-Int-Array: 10086\r\nString-Int-Array: 10010\r\nString-Int-Array: 10000"
-	if got := h.String(); got != want {
-		t.Errorf("Headers_String got: %s, want: %s", got, want)
 	}
 }
 
