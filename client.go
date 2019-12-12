@@ -118,7 +118,7 @@ func (c *Client) DisableRedirect() *Client {
 	return c.SetRedirect(disableRedirect)
 }
 
-func disableRedirect(req *http.Request, via []*http.Request) error {
+func disableRedirect(_ *http.Request, _ []*http.Request) error {
 	return http.ErrUseLastResponse
 }
 

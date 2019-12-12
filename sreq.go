@@ -168,6 +168,7 @@ func (h H) Get(key string) interface{} {
 	return h[key]
 }
 
+// GetSlice gets the []interface{} value associated with the given key.
 func (h H) GetSlice(key string) []interface{} {
 	if h == nil {
 		return nil
@@ -233,7 +234,7 @@ func (h H) GetFloat64(key string) float64 {
 	return v
 }
 
-// GetFloat64Slice gets the  []float64 value associated with the given key.
+// GetFloat64Slice gets the []float64 value associated with the given key.
 func (h H) GetFloat64Slice(key string) []float64 {
 	v := h.GetSlice(key)
 	vs := make([]float64, 0, len(v))
@@ -374,6 +375,7 @@ func (h H) GetHSlice(key string) []H {
 	return vs
 }
 
+// String returns the JSON-encoded text representation of h.
 func (h H) String() string {
 	return toJSON(h)
 }
