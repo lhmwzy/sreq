@@ -14,21 +14,34 @@ import (
 	"github.com/winterssy/sreq"
 )
 
+const (
+	testString = "2019"
+	testInt    = 2019
+	wantValues = "int=2019&intArray=10086&intArray=10010&" +
+		"string=2019&stringArray=10086&stringArray=10010&" +
+		"stringIntArray=10086&stringIntArray=10010"
+	wantHeaders = "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\n" +
+		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\n" +
+		"String-Int-Array: 10086\r\nString-Int-Array: 10010"
+)
+
 var (
-	testStringArray = []string{"10086", "10010", "10000"}
-	testValues      = sreq.Values{
-		"string":         "2019",
-		"int":            2019,
+	testStringArray    = []string{"10086", "10010"}
+	testIntArray       = []int{10086, 10010}
+	testStringIntArray = []interface{}{"10086", 10010}
+	testValues         = sreq.Values{
+		"string":         testString,
+		"int":            testInt,
 		"stringArray":    testStringArray,
-		"intArray":       []int{10086, 10010, 10000},
-		"stringIntArray": []interface{}{"10086", 10010, 10000},
+		"intArray":       testIntArray,
+		"stringIntArray": testStringIntArray,
 	}
 	testHeaders = sreq.Headers{
-		"string":           "2019",
-		"int":              2019,
+		"string":           testString,
+		"int":              testInt,
 		"string-array":     testStringArray,
-		"int-array":        []int{10086, 10010, 10000},
-		"string-int-array": []interface{}{"10086", 10010, 10000},
+		"int-array":        testIntArray,
+		"string-int-array": testStringIntArray,
 	}
 )
 
@@ -65,11 +78,11 @@ func TestValues(t *testing.T) {
 	}
 
 	v = make(sreq.Values)
-	v.Set("string", "2019")
-	v.Set("int", 2019)
+	v.Set("string", testString)
+	v.Set("int", testInt)
 	v.Set("stringArray", testStringArray)
-	v.Set("intArray", []int{10086, 10010, 10000})
-	v.Set("stringIntArray", []interface{}{"10086", 10010, 10000})
+	v.Set("intArray", testIntArray)
+	v.Set("stringIntArray", testStringIntArray)
 	if len(v) != 5 {
 		t.Fatal("Values_Set test failed")
 	}
@@ -80,11 +93,8 @@ func TestValues(t *testing.T) {
 		t.Error("Values_Get test failed")
 	}
 
-	want := "int=2019&intArray=10086&intArray=10010&intArray=10000&" +
-		"string=2019&stringArray=10086&stringArray=10010&stringArray=10000&" +
-		"stringIntArray=10086&stringIntArray=10010&stringIntArray=10000"
-	if got := v.String(); got != want {
-		t.Errorf("Values_String got: %q, want: %q", got, want)
+	if got := v.String(); got != wantValues {
+		t.Errorf("Values_String got: %q, want: %q", got, wantValues)
 	}
 
 	v.Del("string")
@@ -97,7 +107,7 @@ func TestValues(t *testing.T) {
 		"offset": 0,
 		"limit":  100,
 	}
-	want = "limit=100&offset=0&q=Go语言"
+	want := "limit=100&offset=0&q=Go语言"
 	if got := v.Encode(); got != want {
 		t.Errorf("Values_Encode got: %q, want: %q", got, want)
 	}
@@ -110,11 +120,11 @@ func TestHeaders(t *testing.T) {
 	}
 
 	h = make(sreq.Headers)
-	h.Set("string", "2019")
-	h.Set("int", 2019)
+	h.Set("string", testString)
+	h.Set("int", testInt)
 	h.Set("string-array", testStringArray)
-	h.Set("int-array", []int{10086, 10010, 10000})
-	h.Set("string-int-array", []interface{}{"10086", 10010, 10000})
+	h.Set("int-array", testIntArray)
+	h.Set("string-int-array", testStringIntArray)
 	if len(h) != 5 {
 		t.Fatal("Headers_Set test failed")
 	}
@@ -125,11 +135,8 @@ func TestHeaders(t *testing.T) {
 		t.Error("Headers_Get test failed")
 	}
 
-	want := "Int: 2019\r\nInt-Array: 10086\r\nInt-Array: 10010\r\nInt-Array: 10000\r\n" +
-		"String: 2019\r\nString-Array: 10086\r\nString-Array: 10010\r\nString-Array: 10000\r\n" +
-		"String-Int-Array: 10086\r\nString-Int-Array: 10010\r\nString-Int-Array: 10000"
-	if got := h.String(); got != want {
-		t.Errorf("Headers_String got: %q, want: %q", got, want)
+	if got := h.String(); got != wantHeaders {
+		t.Errorf("Headers_String got: %q, want: %q", got, wantHeaders)
 	}
 
 	h.Del("string")

@@ -97,7 +97,7 @@ func TestWithQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Args.Int != "2019" || resp.Args.String != "2019" ||
+	if resp.Args.Int != testString || resp.Args.String != testString ||
 		!reflect.DeepEqual(resp.Args.StringArray, testStringArray) ||
 		!reflect.DeepEqual(resp.Args.IntArray, testStringArray) ||
 		!reflect.DeepEqual(resp.Args.StringIntArray, testStringArray) {
@@ -144,8 +144,8 @@ func TestWithHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "10086,10010,10000"
-	if resp.Headers["String"] != "2019" || resp.Headers["Int"] != "2019" ||
+	want := "10086,10010"
+	if resp.Headers["String"] != testString || resp.Headers["Int"] != testString ||
 		resp.Headers["String-Array"] != want ||
 		resp.Headers["Int-Array"] != want ||
 		resp.Headers["String-Int-Array"] != want {
@@ -311,7 +311,7 @@ func TestWithForm(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.Form.Int != "2019" || resp.Form.String != "2019" ||
+	if resp.Form.Int != testString || resp.Form.String != testString ||
 		!reflect.DeepEqual(resp.Form.StringArray, testStringArray) ||
 		!reflect.DeepEqual(resp.Form.IntArray, testStringArray) ||
 		!reflect.DeepEqual(resp.Form.StringIntArray, testStringArray) {

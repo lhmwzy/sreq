@@ -246,13 +246,13 @@ func convertIntArray(v []int) []string {
 }
 
 func convertStringIntArray(v []interface{}) []string {
-	vs := make([]string, len(v))
-	for i, vv := range v {
+	vs := make([]string, 0, len(v))
+	for _, vv := range v {
 		switch vv := vv.(type) {
 		case string:
-			vs[i] = vv
+			vs = append(vs, vv)
 		case int:
-			vs[i] = strconv.Itoa(vv)
+			vs = append(vs, strconv.Itoa(vv))
 		}
 	}
 	return vs
