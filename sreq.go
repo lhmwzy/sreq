@@ -16,7 +16,7 @@ import (
 
 const (
 	// Version of sreq.
-	Version = "0.6.0"
+	Version = "0.7.0"
 
 	defaultUserAgent = "go-sreq/" + Version
 )
@@ -55,7 +55,7 @@ type (
 
 	// File specifies a file.
 	// To upload a file you must specify its Filename field,
-	// otherwise sreq will raise a *sreq.RequestError and then abort request.
+	// otherwise sreq will raise a *RequestError and then abort request.
 	// If you don't specify the MIME field, sreq will detect automatically using http.DetectContentType.
 	File struct {
 		Filename string
@@ -399,7 +399,7 @@ func (f Files) Del(key string) {
 	delete(f, key)
 }
 
-// NewFile returns a *sreq.File instance given a filename and its body.
+// NewFile returns a *File instance given a filename and its body.
 func NewFile(filename string, body io.Reader) *File {
 	return &File{
 		Filename: filename,
@@ -440,7 +440,7 @@ func (f *File) Close() error {
 	return rc.Close()
 }
 
-// Open opens the named file and returns a *sreq.File instance whose Filename is filename.
+// Open opens the named file and returns a *File instance whose Filename is filename.
 func Open(filename string) (*File, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -450,7 +450,7 @@ func Open(filename string) (*File, error) {
 	return NewFile(filename, file), nil
 }
 
-// MustOpen opens the named file and returns a *sreq.File instance whose Filename is filename.
+// MustOpen opens the named file and returns a *File instance whose Filename is filename.
 // If there is an error, it will panic.
 func MustOpen(filename string) *File {
 	file, err := Open(filename)
