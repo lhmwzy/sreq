@@ -2,6 +2,7 @@ package sreq_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -205,5 +206,98 @@ func TestOpen(t *testing.T) {
 	err = ff.Close()
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestH(t *testing.T) {
+	var (
+		boolSlice            = []bool{true, false}
+		stringVal            = "hello world"
+		stringSlice          = []string{"hello", "world"}
+		float64Val           = 3.14159
+		float64Slice         = []float64{3.14159, 3.14160}
+		float32Val   float32 = 3.14
+		float32Slice         = []float32{3.14, 3.15}
+		intVal               = -314
+		intSlice             = []int{-314, -315}
+		int32Val     int32   = -314159
+		int32Slice           = []int32{-314159, -314160}
+		int64Val     int64   = -31415926535
+		int64Slice           = []int64{-31415926535, -31415926536}
+		uintVal      uint    = 314
+		uintSlice            = []uint{314, 315}
+		uint32Val    uint32  = 314159
+		uint32Slice          = []uint32{314159, 314160}
+		uint64Val    uint64  = 31415926535
+		uint64Slice          = []uint64{31415926535, 31415926536}
+	)
+
+	m := map[string]interface{}{
+		"bool":         true,
+		"boolSlice":    boolSlice,
+		"string":       stringVal,
+		"stringSlice":  stringSlice,
+		"float64":      float64Val,
+		"float64Slice": float64Slice,
+		"float32":      float32Val,
+		"float32Slice": float32Slice,
+		"int":          intVal,
+		"intSlice":     intSlice,
+		"int32":        int32Val,
+		"int32Slice":   int32Slice,
+		"int64":        int64Val,
+		"int64Slice":   int64Slice,
+		"uint":         uintVal,
+		"uintSlice":    uintSlice,
+		"uint32":       uint32Val,
+		"uint32Slice":  uint32Slice,
+		"uint64":       uint64Val,
+		"uint64Slice":  uint64Slice,
+	}
+	enc, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var h sreq.H
+	if h.Get("key") != nil || len(h.GetSlice("slice")) != 0 ||
+		h.GetBool("bool") || h.GetString("string") != "" ||
+		h.GetFloat64("float64") != 0 || h.GetH("key") != nil {
+		t.Error("H test failed")
+	}
+
+	err = json.Unmarshal(enc, &h)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !h.GetBool("bool") || !reflect.DeepEqual(h.GetBoolSlice("boolSlice"), boolSlice) ||
+		h.GetString("string") != stringVal ||
+		!reflect.DeepEqual(h.GetStringSlice("stringSlice"), stringSlice) ||
+		h.GetFloat64("float64") != float64Val ||
+		!reflect.DeepEqual(h.GetFloat64Slice("float64Slice"), float64Slice) ||
+		h.GetFloat32("float32") != float32Val ||
+		!reflect.DeepEqual(h.GetFloat32Slice("float32Slice"), float32Slice) ||
+		h.GetInt("int") != intVal ||
+		!reflect.DeepEqual(h.GetIntSlice("intSlice"), intSlice) ||
+		h.GetInt32("int32") != int32Val ||
+		!reflect.DeepEqual(h.GetInt32Slice("int32Slice"), int32Slice) ||
+		h.GetInt64("int64") != int64Val ||
+		!reflect.DeepEqual(h.GetInt64Slice("int64Slice"), int64Slice) ||
+		h.GetUint("uint") != uintVal ||
+		!reflect.DeepEqual(h.GetUintSlice("uintSlice"), uintSlice) ||
+		h.GetUint32("uint32") != uint32Val ||
+		!reflect.DeepEqual(h.GetUint32Slice("uint32Slice"), uint32Slice) ||
+		h.GetUint64("uint64") != uint64Val ||
+		!reflect.DeepEqual(h.GetUint64Slice("uint64Slice"), uint64Slice) {
+		t.Error("H test failed")
+	}
+
+	h = sreq.H{
+		"msg": "hello world",
+	}
+	want := "{\n\t\"msg\": \"hello world\"\n}\n"
+	if got := h.String(); got != want {
+		t.Errorf("H_string got: %q, want: %q", got, want)
 	}
 }

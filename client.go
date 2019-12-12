@@ -115,10 +115,11 @@ func DisableRedirect() *Client {
 
 // DisableRedirect makes the HTTP client not follow redirects.
 func (c *Client) DisableRedirect() *Client {
-	policy := func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-	return c.SetRedirect(policy)
+	return c.SetRedirect(disableRedirect)
+}
+
+func disableRedirect(req *http.Request, via []*http.Request) error {
+	return http.ErrUseLastResponse
 }
 
 // SetCookieJar sets cookie jar of the HTTP client.

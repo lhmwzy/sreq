@@ -75,6 +75,12 @@ func (resp *Response) JSON(v interface{}) error {
 	return json.NewDecoder(tee).Decode(v)
 }
 
+// H decodes the HTTP response body and unmarshals its JSON-encoded data into a sreq.H instance.
+func (resp *Response) H() (H, error) {
+	h := make(H)
+	return h, resp.JSON(&h)
+}
+
 // XML decodes the HTTP response body and unmarshals its XML-encoded data into v.
 func (resp *Response) XML(v interface{}) error {
 	if resp.Err != nil {

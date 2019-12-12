@@ -94,6 +94,63 @@ func TestResponse_JSON(t *testing.T) {
 	}
 }
 
+func TestResponse_H(t *testing.T) {
+	client := sreq.New()
+	h, err := client.
+		Get("http://httpbin.org/get",
+			sreq.WithQuery(sreq.Params{
+				"k1": "v1",
+				"k2": "v2",
+			}),
+		).
+		EnsureStatusOk().
+		H()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args := h.GetH("args")
+	if args.GetString("k1") != "v1" || args.GetString("k2") != "v2" {
+		t.Error("Response_H test failed")
+	}
+
+	h, err = client.
+		Post("http://httpbin.org/post",
+			sreq.WithJSON(map[string]interface{}{
+				"songs": []map[string]interface{}{
+					{
+						"id":     29947420,
+						"name":   "Fade",
+						"artist": "Alan Walker",
+						"album":  "Fade",
+					},
+					{
+						"id":     444269135,
+						"name":   "Alone",
+						"artist": "Alan Walker",
+						"album":  "Alone",
+					},
+				},
+			}, true),
+		).
+		EnsureStatusOk().
+		H()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data := h.GetH("json").GetHSlice("songs")
+	if len(data) != 2 {
+		t.Fatal("Response_H test failed")
+	}
+
+	fade := data[0]
+	if fade.GetInt("id") != 29947420 || fade.GetString("name") != "Fade" ||
+		fade.GetString("artist") != "Alan Walker" {
+		t.Error("Response_H test failed")
+	}
+}
+
 func TestResponse_XML(t *testing.T) {
 	type plant struct {
 		XMLName xml.Name `xml:"plant"`
