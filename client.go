@@ -575,11 +575,13 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 	var err error
 	for i := 0; i < retry.attempts; i++ {
 		resp.RawResponse, resp.Err = c.do(req.RawRequest)
-		select {
-		case err = <-req.errBackground:
+		if err = ctx.Err(); err != nil {
+			select {
+			case err = <-req.errBackground:
+			default:
+			}
 			resp.Err = err
 			return
-		default:
 		}
 
 		shouldRetry := resp.Err != nil
