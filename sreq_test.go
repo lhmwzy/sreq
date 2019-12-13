@@ -271,7 +271,8 @@ func TestH(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !h.GetBool("bool") || !reflect.DeepEqual(h.GetBoolSlice("boolSlice"), boolSlice) ||
+	if h.Get("float64") != float64Val || !h.GetBool("bool") ||
+		!reflect.DeepEqual(h.GetBoolSlice("boolSlice"), boolSlice) ||
 		h.GetString("string") != stringVal ||
 		!reflect.DeepEqual(h.GetStringSlice("stringSlice"), stringSlice) ||
 		h.GetFloat64("float64") != float64Val ||

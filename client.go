@@ -572,8 +572,14 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 		retry = c.retry
 	}
 
+	allowRetry := req.RawRequest.Body == nil
+
 	var err error
 	for i := 0; i < retry.attempts; i++ {
+		if req.getBody != nil {
+			req.SetBody(req.getBody())
+		}
+
 		resp.RawResponse, resp.Err = c.do(req.RawRequest)
 		if err = ctx.Err(); err != nil {
 			select {
@@ -581,6 +587,10 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 			default:
 			}
 			resp.Err = err
+			return
+		}
+
+		if !allowRetry {
 			return
 		}
 

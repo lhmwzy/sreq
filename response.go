@@ -191,6 +191,10 @@ func (resp *Response) Verbose(w io.Writer) error {
 		return resp.Err
 	}
 
+	const (
+		streamBodyTip = "if you see this message it means the HTTP request body cannot be read twice"
+	)
+
 	rawRequest := resp.RawResponse.Request
 	fmt.Fprintf(w, "> %s %s %s\r\n", rawRequest.Method, rawRequest.URL.RequestURI(), rawRequest.Proto)
 	fmt.Fprintf(w, "> Host: %s\r\n", rawRequest.URL.Host)
@@ -199,7 +203,13 @@ func (resp *Response) Verbose(w io.Writer) error {
 	}
 	fmt.Fprint(w, ">\r\n")
 
-	if rawRequest.GetBody != nil && rawRequest.ContentLength != 0 {
+	if rawRequest.Body == nil {
+		goto handleResponse
+	}
+
+	if rawRequest.GetBody == nil {
+		fmt.Fprintf(w, "* %s\r\n", streamBodyTip)
+	} else if rawRequest.ContentLength != 0 {
 		rc, err := rawRequest.GetBody()
 		if err != nil {
 			return err
@@ -214,6 +224,7 @@ func (resp *Response) Verbose(w io.Writer) error {
 		fmt.Fprint(w, "\r\n")
 	}
 
+handleResponse:
 	rawResponse := resp.RawResponse
 	fmt.Fprintf(w, "< %s %s\r\n", rawResponse.Proto, rawResponse.Status)
 	for k := range rawResponse.Header {

@@ -52,6 +52,7 @@ type (
 		RawRequest *http.Request
 		Err        error
 
+		getBody       func() io.Reader
 		timeout       time.Duration
 		retry         *retry
 		errBackground chan error
@@ -91,6 +92,7 @@ func (req *Request) Raw() (*http.Request, error) {
 }
 
 // SetBody sets body for the HTTP request.
+// Notes: SetBody does not support retry since it's unable to read a stream twice.
 func (req *Request) SetBody(body io.Reader) *Request {
 	if req.Err != nil {
 		return req
@@ -227,8 +229,9 @@ func (req *Request) SetContent(content []byte) *Request {
 		return req
 	}
 
-	r := bytes.NewBuffer(content)
-	req.SetBody(r)
+	req.getBody = func() io.Reader {
+		return bytes.NewBuffer(content)
+	}
 	return req
 }
 
@@ -238,8 +241,9 @@ func (req *Request) SetText(text string) *Request {
 		return req
 	}
 
-	r := bytes.NewBufferString(text)
-	req.SetBody(r)
+	req.getBody = func() io.Reader {
+		return bytes.NewBufferString(text)
+	}
 	req.SetContentType("text/plain; charset=utf-8")
 	return req
 }
@@ -258,8 +262,10 @@ func (req *Request) SetForm(form KV) *Request {
 		}
 	}
 
-	r := strings.NewReader(data.Encode())
-	req.SetBody(r)
+	s := data.Encode()
+	req.getBody = func() io.Reader {
+		return strings.NewReader(s)
+	}
 	req.SetContentType("application/x-www-form-urlencoded")
 	return req
 }
@@ -276,8 +282,9 @@ func (req *Request) SetJSON(data interface{}, escapeHTML bool) *Request {
 		return req
 	}
 
-	r := bytes.NewReader(b)
-	req.SetBody(r)
+	req.getBody = func() io.Reader {
+		return bytes.NewReader(b)
+	}
 	req.SetContentType("application/json")
 	return req
 }
@@ -294,8 +301,9 @@ func (req *Request) SetXML(data interface{}) *Request {
 		return req
 	}
 
-	r := bytes.NewReader(b)
-	req.SetBody(r)
+	req.getBody = func() io.Reader {
+		return bytes.NewReader(b)
+	}
 	req.SetContentType("application/xml")
 	return req
 }
@@ -357,6 +365,7 @@ func setForm(mw *multipart.Writer, form KV) {
 }
 
 // SetMultipart sets multipart payload for the HTTP request.
+// Notes: SetMultipart does not support retry since it's unable to read a stream twice.
 func (req *Request) SetMultipart(files Files, form KV) *Request {
 	if req.Err != nil {
 		return req
@@ -382,7 +391,9 @@ func (req *Request) SetMultipart(files Files, form KV) *Request {
 			return
 		}
 
-		setForm(mw, form)
+		if form != nil {
+			setForm(mw, form)
+		}
 	}()
 
 	req.SetBody(pr)
@@ -471,6 +482,7 @@ func (req *Request) SetRetry(attempts int, delay time.Duration,
 }
 
 // WithBody sets body for the HTTP request.
+// Notes: WithBody does not support retry since it's unable to read a stream twice.
 func WithBody(body io.Reader) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetBody(body)
@@ -555,6 +567,7 @@ func WithXML(data interface{}) RequestOption {
 }
 
 // WithMultipart sets multipart payload for the HTTP request.
+// Notes: WithMultipart does not support retry since it's unable to read a stream twice.
 func WithMultipart(files Files, form KV) RequestOption {
 	return func(req *Request) *Request {
 		return req.SetMultipart(files, form)

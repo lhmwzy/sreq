@@ -305,6 +305,17 @@ func TestResponse_Verbose(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
+	err = client.
+		Post("http://httpbin.org/post",
+			sreq.WithMultipart(sreq.Files{
+				"file": sreq.MustOpen("./testdata/testfile1.txt"),
+			}, nil),
+		).
+		Verbose(ioutil.Discard)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestResponse_ReuseBody(t *testing.T) {
