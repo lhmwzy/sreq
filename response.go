@@ -192,7 +192,7 @@ func (resp *Response) Verbose(w io.Writer) error {
 	}
 
 	const (
-		streamBodyTip = "if you see this message it means the HTTP request body cannot be read twice"
+		streamBodyTip = "if you see this message it means the HTTP request body is a stream and cannot be read twice"
 	)
 
 	rawRequest := resp.RawResponse.Request
