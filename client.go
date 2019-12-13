@@ -557,14 +557,6 @@ var defaultRetry = &retry{
 }
 
 func (c *Client) doWithRetry(req *Request, resp *Response) {
-	ctx := req.RawRequest.Context()
-	var cancel context.CancelFunc
-	if req.timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, req.timeout)
-		req.RawRequest = req.RawRequest.WithContext(ctx)
-		defer cancel()
-	}
-
 	retry := defaultRetry
 	if req.retry != nil {
 		retry = req.retry
@@ -573,6 +565,14 @@ func (c *Client) doWithRetry(req *Request, resp *Response) {
 	}
 
 	allowRetry := req.RawRequest.Body == nil
+
+	ctx := req.RawRequest.Context()
+	var cancel context.CancelFunc
+	if req.timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, req.timeout)
+		req.RawRequest = req.RawRequest.WithContext(ctx)
+		defer cancel()
+	}
 
 	var err error
 	for i := 0; i < retry.attempts; i++ {
