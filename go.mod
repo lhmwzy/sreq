@@ -1,4 +1,4 @@
-module github.com/winterssy/sreq
+module github.com/lhmwzy/sreq
 
 go 1.13
 
